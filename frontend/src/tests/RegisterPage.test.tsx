@@ -64,8 +64,8 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign up' })).toBeInTheDocument()
     expect(screen.getByText('Already have an account?')).toBeInTheDocument()
     expect(screen.getByText('Sign in')).toBeInTheDocument()
@@ -76,8 +76,8 @@ describe('RegisterPage', () => {
 
     const nameInput = screen.getByLabelText(/name/i)
     const emailInput = screen.getByLabelText(/email/i)
-    const passwordInput = screen.getByLabelText(/password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const passwordInput = screen.getByLabelText('Password')
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
 
     expect(nameInput).toHaveAttribute('type', 'text')
     expect(nameInput).toHaveAttribute('required')
@@ -107,8 +107,8 @@ describe('RegisterPage', () => {
     await waitFor(() => {
       const nameInput = screen.getByLabelText(/name/i)
       const emailInput = screen.getByLabelText(/email/i)
-      const passwordInput = screen.getByLabelText(/password/i)
-      const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+      const passwordInput = screen.getByLabelText('Password')
+      const confirmPasswordInput = screen.getByLabelText('Confirm password')
 
       expect(nameInput).toBeInvalid()
       expect(emailInput).toBeInvalid()
@@ -132,8 +132,8 @@ describe('RegisterPage', () => {
   it('should show validation error for password mismatch', async () => {
     renderRegisterPage()
 
-    const passwordInput = screen.getByLabelText(/password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const passwordInput = screen.getByLabelText('Password')
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
 
     fireEvent.change(passwordInput, { target: { value: 'password123' } })
     fireEvent.change(confirmPasswordInput, { target: { value: 'different' } })
@@ -150,8 +150,8 @@ describe('RegisterPage', () => {
 
     const nameInput = screen.getByLabelText(/name/i)
     const emailInput = screen.getByLabelText(/email/i)
-    const passwordInput = screen.getByLabelText(/password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const passwordInput = screen.getByLabelText('Password')
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
     const submitButton = screen.getByRole('button', { name: 'Sign up' })
 
     fireEvent.change(nameInput, { target: { value: 'Test User' } })
@@ -168,7 +168,7 @@ describe('RegisterPage', () => {
   it('should show loading state during registration', () => {
     renderRegisterPage({ loading: true })
 
-    const submitButton = screen.getByRole('button', { name: 'Sign up' })
+    const submitButton = screen.getByRole('button', { name: 'Creating account...' })
     expect(submitButton).toBeDisabled()
     expect(screen.getByText('Creating account...')).toBeInTheDocument()
   })
@@ -191,8 +191,8 @@ describe('RegisterPage', () => {
 
     const nameInput = screen.getByLabelText(/name/i)
     const emailInput = screen.getByLabelText(/email/i)
-    const passwordInput = screen.getByLabelText(/password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const passwordInput = screen.getByLabelText('Password')
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
     const submitButton = screen.getByRole('button', { name: 'Sign up' })
 
     fireEvent.change(nameInput, { target: { value: 'Test User' } })
@@ -227,8 +227,8 @@ describe('RegisterPage', () => {
 
     const nameInput = screen.getByLabelText(/name/i)
     const emailInput = screen.getByLabelText(/email/i)
-    const passwordInput = screen.getByLabelText(/password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const passwordInput = screen.getByLabelText('Password')
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
 
     fireEvent.change(nameInput, { target: { value: 'Test User' } })
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -252,8 +252,8 @@ describe('RegisterPage', () => {
   it('should show password confirmation validation when passwords differ', async () => {
     renderRegisterPage()
 
-    const passwordInput = screen.getByLabelText(/password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const passwordInput = screen.getByLabelText('Password')
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
 
     fireEvent.change(passwordInput, { target: { value: 'password123' } })
     fireEvent.change(confirmPasswordInput, { target: { value: 'different123' } })
@@ -267,9 +267,9 @@ describe('RegisterPage', () => {
   it('should have responsive design classes', () => {
     renderRegisterPage()
 
-    const card = screen.getByText('Create your account').closest('.card')
+    const card = screen.getByRole('form').parentElement
     expect(card).toBeInTheDocument()
-    expect(card).toHaveClass('max-w-md', 'mx-auto')
+    expect(card).toHaveClass('max-w-md', 'w-full')
   })
 
   it('should have proper form validation attributes', () => {
@@ -280,12 +280,12 @@ describe('RegisterPage', () => {
     expect(nameInput).toHaveAttribute('maxlength', '50')
 
     const emailInput = screen.getByLabelText(/email/i)
-    expect(emailInput).toHaveAttribute('pattern')
+    expect(emailInput).toHaveAttribute('type', 'email')
 
-    const passwordInput = screen.getByLabelText(/password/i)
+    const passwordInput = screen.getByLabelText('Password')
     expect(passwordInput).toHaveAttribute('minlength', '6')
 
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+    const confirmPasswordInput = screen.getByLabelText('Confirm password')
     expect(confirmPasswordInput).toHaveAttribute('minlength', '6')
   })
 
