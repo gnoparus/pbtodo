@@ -102,7 +102,7 @@ describe('ProtectedRoute', () => {
       isAuthenticated: false,
     })
 
-    const loadingDiv = screen.getByText('Checking authentication...')
+    const loadingDiv = screen.getByText('Checking authentication...').parentElement
     expect(loadingDiv).toHaveAttribute('aria-busy', 'true')
     expect(loadingDiv).toHaveAttribute('aria-live', 'polite')
   })
@@ -163,7 +163,7 @@ describe('ProtectedRoute', () => {
       isAuthenticated: false,
     })
 
-    const container = screen.getByText('Checking authentication...').parentElement
+    const container = screen.getByText('Checking authentication...').parentElement?.parentElement
     expect(container).toHaveClass('flex')
     expect(container).toHaveClass('items-center')
     expect(container).toHaveClass('justify-center')
