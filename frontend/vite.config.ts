@@ -13,6 +13,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/tests/setup.ts',
+    setupFiles: ['./src/tests/setup.ts', './src/tests/integration/setup.ts'],
+    include: [
+      'src/tests/**/*.{test,spec}.{js,ts,tsx}',
+      'src/tests/integration/**/*.{test,spec}.{js,ts,tsx}',
+    ],
+    exclude: [
+      'node_modules',
+      'dist',
+    ],
+    testTimeout: 10000, // Increase timeout for integration tests
   },
 })

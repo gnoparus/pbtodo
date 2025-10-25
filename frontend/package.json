@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:integration": "vitest run src/tests/integration",
+    "test:unit": "vitest run src/tests --exclude src/tests/integration",
+    "test:all": "npm run test:unit && npm run test:integration"
   },
   "dependencies": {
     "react": "^18.2.0",
