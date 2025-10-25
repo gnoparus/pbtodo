@@ -4,16 +4,10 @@ node_modules/
 **/node_modules/
 frontend/node_modules/
 
-# Lock files (except package-lock.json at root)
+# Lock files (keep root package-lock.json, exclude others)
 */package-lock.json
 **/package-lock.json
 frontend/package-lock.json
-
-# Test cache and build artifacts
-*.tsbuildinfo
-.vitest/
-frontend/.vitest/
-frontend/coverage/
 
 # Build outputs
 dist/
@@ -41,34 +35,33 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage and testing
 coverage/
 *.lcov
 */coverage/
-
-# nyc test coverage
+frontend/coverage/
 .nyc_output
+.vitest/
+frontend/.vitest/
+test-results/
+playwright-report/
 
-# Dependency directories
-jspm_packages/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Microbundle cache
+# Cache directories
+.cache
+.parcel-cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
+.npm
+.eslintcache
+.stylelintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# Dependency directories
+jspm_packages/
 
 # Optional REPL history
 .node_repl_history
@@ -79,23 +72,11 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variable files
-.env.development.local
-.env.test.local
-.env.production.local
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
+# Framework build outputs
 .next
-
-# Nuxt.js build / generate output
 .nuxt
 
 # Gatsby files
-.cache/
 public
 
 # Storybook build outputs
@@ -131,8 +112,3 @@ pocketbase/pb_data/
 pocketbase/pb_hooks/
 pocketbase/*.db
 pocketbase/*.log
-
-# Vitest
-.vitest/
-test-results/
-playwright-report/
