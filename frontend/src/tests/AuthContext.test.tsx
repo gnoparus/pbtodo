@@ -88,7 +88,7 @@ describe('AuthContext', () => {
     useAuth.mockReturnValue(mockAuth)
 
     return render(
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <TestComponent />
         </AuthProvider>

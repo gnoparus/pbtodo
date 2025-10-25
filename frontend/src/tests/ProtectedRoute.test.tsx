@@ -32,7 +32,7 @@ const renderProtectedRoute = (authOverrides = {}) => {
   useAuth.mockReturnValue(mockAuth)
 
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ProtectedRoute>
           <div data-testid="protected-content">Protected Content</div>

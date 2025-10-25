@@ -57,7 +57,7 @@ const renderTodoPage = (todoOverrides = {}, authOverrides = {}) => {
   useAuth.mockReturnValue(mockAuth)
 
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <TodoProvider>
           <TodoPage />

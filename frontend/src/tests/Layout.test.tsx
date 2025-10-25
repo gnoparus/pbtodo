@@ -32,7 +32,7 @@ const renderLayout = (authOverrides = {}) => {
   useAuth.mockReturnValue(mockAuth)
 
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Layout>
           <div data-testid="test-children">Test Content</div>
