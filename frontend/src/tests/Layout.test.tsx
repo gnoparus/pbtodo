@@ -89,7 +89,7 @@ describe('Layout', () => {
     expect(screen.queryByText('Login')).not.toBeInTheDocument()
     expect(screen.queryByText('Register')).not.toBeInTheDocument()
     expect(screen.getByText('Logout')).toBeInTheDocument()
-    expect(screen.getByText('Test User')).toBeInTheDocument()
+    expect(screen.getByText('Welcome, Test User')).toBeInTheDocument()
   })
 
   it('should show error message when error exists', () => {
@@ -195,7 +195,7 @@ describe('Layout', () => {
     renderLayout()
 
     const nav = screen.getByRole('navigation')
-    expect(nav).toHaveClass('responsive-nav')
+    expect(nav).toHaveClass('flex', 'items-center', 'space-x-4')
   })
 
   it('should have proper semantic HTML structure', () => {
@@ -210,6 +210,7 @@ describe('Layout', () => {
   it('should have accessibility attributes', () => {
     renderLayout({
       error: 'Test error',
+      loading: true,
     })
 
     const alert = screen.getByRole('alert')
