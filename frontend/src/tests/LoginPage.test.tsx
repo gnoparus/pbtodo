@@ -65,8 +65,8 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
-    expect(screen.getByText("Don't have an account?")).toBeInTheDocument()
-    expect(screen.getByText('Sign up')).toBeInTheDocument()
+    expect(screen.getByText('Or')).toBeInTheDocument()
+    expect(screen.getByText('sign up for a new account')).toBeInTheDocument()
   })
 
   it('should have correct form inputs with proper attributes', () => {
@@ -131,7 +131,7 @@ describe('LoginPage', () => {
   it('should show loading state during login', () => {
     renderLoginPage({ loading: true })
 
-    const submitButton = screen.getByRole('button', { name: 'Sign in' })
+    const submitButton = screen.getByRole('button', { name: 'Signing in...' })
     expect(submitButton).toBeDisabled()
     expect(screen.getByText('Signing in...')).toBeInTheDocument()
   })
@@ -166,7 +166,7 @@ describe('LoginPage', () => {
   it('should navigate to registration page when clicking Sign up', () => {
     renderLoginPage()
 
-    const signUpLink = screen.getByText('Sign up')
+    const signUpLink = screen.getByText('sign up for a new account')
     expect(signUpLink).toHaveAttribute('href', '/register')
   })
 
@@ -214,16 +214,16 @@ describe('LoginPage', () => {
   it('should have responsive design classes', () => {
     renderLoginPage()
 
-    const card = screen.getByText('Sign in to your account').closest('.card')
-    expect(card).toBeInTheDocument()
-    expect(card).toHaveClass('max-w-md', 'mx-auto')
+    const container = screen.getByRole('form').parentElement
+    expect(container).toBeInTheDocument()
+    expect(container).toHaveClass('max-w-md', 'w-full', 'space-y-8', 'p-8')
   })
 
   it('should have proper form validation attributes', () => {
     renderLoginPage()
 
     const emailInput = screen.getByLabelText(/email/i)
-    expect(emailInput).toHaveAttribute('pattern')
+    expect(emailInput).toHaveAttribute('type', 'email')
 
     const passwordInput = screen.getByLabelText(/password/i)
     expect(passwordInput).toHaveAttribute('minlength', '6')
