@@ -202,10 +202,10 @@ describe('PocketBase Service', () => {
       })
       createdTodoIds.push(todo.id)
 
-      expect(todo.description).toBeUndefined()
+      expect(todo.description).toBe('')
 
       const retrievedTodo = await api.todos.getById(todo.id)
-      expect(retrievedTodo.description).toBeUndefined()
+      expect(retrievedTodo.description).toBe('')
     })
   })
 

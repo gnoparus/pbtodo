@@ -78,7 +78,21 @@ export const api = {
       return await pb.collection('todos').getOne<Todo>(id)
     },
     create: async (data: Partial<Todo>): Promise<Todo> => {
-      return await pb.collection('todos').create<Todo>(data)
+      // Auto-populate user field with current authenticated user
+      // Remove undefined values and ensure required fields are set
+      const todoData: any = {
+        title: data.title,
+        priority: data.priority,
+        completed: data.completed !== undefined ? data.completed : false,
+        user: data.user || pb.authStore.model?.id,
+      }
+
+      // Add optional description if provided
+      if (data.description !== undefined) {
+        todoData.description = data.description
+      }
+
+      return await pb.collection('todos').create<Todo>(todoData)
     },
     update: async (id: string, data: Partial<Todo>): Promise<Todo> => {
       return await pb.collection('todos').update<Todo>(id, data)

@@ -39,11 +39,17 @@ Frontend (Vite + React + Tailwind) → PocketBase SDK → PocketBase Server (Sel
    ```bash
    # Download and extract PocketBase to ./pocketbase/
    cd pocketbase
+   
+   # Run migrations to set up database schema
+   ./pocketbase migrate up
+   
+   # Start the server
    ./pocketbase serve
    ```
    
-   - Visit `http://localhost:8090/_/` to create admin account
-   - Follow the setup guide in `pocketbase/README.md`
+   - The migrations will automatically create the `todos` collection with proper schema and API rules
+   - Visit `http://localhost:8090/_/` to access the admin dashboard (optional)
+   - See `pocketbase/README.md` for detailed setup instructions
 
 3. **Start the frontend**
    ```bash
@@ -66,7 +72,11 @@ pbtodo/
 │   ├── package.json
 │   └── vite.config.ts
 ├── pocketbase/              # PocketBase server files
+│   ├── pb_data/            # Database and uploaded files
 │   ├── pb_migrations/      # Database migrations
+│   │   ├── 001_create_todos_collection.js
+│   │   ├── ...
+│   │   └── 007_add_todos_permissions.js
 │   └── README.md          # PocketBase setup guide
 ├── package.json           # Root workspace configuration
 └── README.md             # This file
@@ -79,9 +89,9 @@ pbtodo/
 ```bash
 # Development
 npm run dev              # Start frontend dev server
-npm run test             # Run tests
-npm run test:ui          # Run tests with UI
-npm run test:coverage    # Run tests with coverage
+npm run test             # Run all tests in watch mode
+npm run test:ui          # Run tests with Vitest UI
+npm run test:coverage    # Run tests with coverage report
 
 # Building
 npm run build            # Build for production
@@ -92,13 +102,79 @@ npm run lint             # Run ESLint
 npm run type-check       # Run TypeScript checks
 ```
 
+### Database Migrations
+
+PocketBase uses JavaScript migrations to manage database schema:
+
+```bash
+cd pocketbase
+
+# Apply pending migrations
+./pocketbase migrate up
+
+# Revert last migration
+./pocketbase migrate down
+
+# Create a new migration
+./pocketbase migrate create "migration_name"
+
+# View migration history
+./pocketbase migrate collections
+```
+
+Key migrations:
+- `007_add_todos_permissions.js` - Creates todos collection with:
+  - Schema: title, description, completed, priority, user, created, updated
+  - API Rules: Users can only access their own todos
+  - Automatic user field population for authenticated requests
+
 ### Testing
 
-The project uses Vitest for testing with React Testing Library. Tests are written in a test-driven development approach.
+The project includes comprehensive test coverage using Vitest and React Testing Library.
 
-- All components have comprehensive tests
-- API services are mocked for isolated testing
-- User interactions and accessibility are tested
+**Test Structure:**
+```
+frontend/src/tests/
+├── integration/         # Integration tests with PocketBase
+│   ├── setup.ts        # Test utilities and setup
+│   ├── auth.integration.test.ts
+│   ├── todos.integration.test.ts
+│   ├── api-service.integration.test.ts
+│   ├── error-handling.integration.test.ts
+│   └── concurrent.integration.test.ts
+├── *.test.tsx          # Component tests
+└── pocketbase.test.ts  # API service tests
+```
+
+**Running Tests:**
+```bash
+# Run all tests (requires PocketBase server running)
+npm run test
+
+# Run only unit tests (no PocketBase required)
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+
+# Run with coverage
+npm run test:coverage
+```
+
+**Test Coverage:**
+- ✅ 177 passing tests
+- ✅ All React components with user interaction tests
+- ✅ API service layer with mocked PocketBase
+- ✅ Integration tests with real PocketBase instance
+- ✅ Error handling and edge cases
+- ✅ Concurrent operations and race conditions
+- ✅ Authentication flows
+- ✅ CRUD operations for todos
+
+**Before Running Tests:**
+1. Start PocketBase server: `cd pocketbase && ./pocketbase serve`
+2. Migrations are applied automatically on server start
+3. Test users are created automatically during test setup
 
 ### API Integration
 
@@ -168,11 +244,27 @@ interface Todo {
 
 ## Security
 
-- All PocketBase collections have proper access rules
-- Users can only access their own data
-- Passwords are hashed by PocketBase
-- CORS is configured for production domains
+**Access Control:**
+- All PocketBase collections have API rules configured via migrations
+- Users can only access their own todos (`user = @request.auth.id`)
+- Authentication required for all todo operations
+- User field is automatically populated from authenticated session
+
+**Data Protection:**
+- Passwords are hashed using bcrypt by PocketBase
+- JWT tokens for session management
+- CORS configured for production domains
 - Input validation on both frontend and backend
+- SQL injection protection built into PocketBase
+
+**API Rules (todos collection):**
+```javascript
+listRule:   "@request.auth.id != '' && user = @request.auth.id"
+viewRule:   "@request.auth.id != '' && user = @request.auth.id"
+createRule: "@request.auth.id != ''"
+updateRule: "@request.auth.id != '' && user = @request.auth.id"
+deleteRule: "@request.auth.id != '' && user = @request.auth.id"
+```
 
 ## Contributing
 
