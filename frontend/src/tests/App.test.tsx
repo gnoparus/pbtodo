@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
 import App from '../App'
 import { AuthProvider } from '../contexts/AuthContext'
 import { TodoProvider } from '../contexts/TodoContext'
@@ -31,12 +30,13 @@ vi.mock('../components/ProtectedRoute', () => ({
 }))
 
 describe('App', () => {
+  beforeEach(() => {
+    // Clean up DOM between tests
+    document.body.innerHTML = ''
+  })
+
   const renderApp = () => {
-    return render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    )
+    return render(<App />)
   }
 
   it('should render without crashing', () => {
@@ -63,15 +63,7 @@ describe('App', () => {
   it('should have correct routing configuration', () => {
     renderApp()
 
-    // Navigate to different routes and verify components are rendered
-    // Since we're mocking the components, we can test the routing structure
-
-    // Test default route redirect
-    window.history.pushState({}, '', '/')
-    expect(screen.getByTestId('layout')).toBeInTheDocument()
-
-    // Test protected routes structure
-    window.history.pushState({}, '', '/todos')
+    // Check that the layout wrapper is present for routing
     expect(screen.getByTestId('layout')).toBeInTheDocument()
   })
 
