@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import { api, Todo } from '../services/pocketbase'
 
 interface TodoContextType {
@@ -33,7 +33,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadTodos = async () => {
+  const loadTodos = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -46,9 +46,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const createTodo = async (
+  const createTodo = useCallback(async (
     title: string,
     description?: string,
     priority: 'low' | 'medium' | 'high' = 'medium'
@@ -70,9 +70,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const updateTodo = async (id: string, data: Partial<Todo>) => {
+  const updateTodo = useCallback(async (id: string, data: Partial<Todo>) => {
     setLoading(true)
     setError(null)
     try {
@@ -87,9 +87,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const toggleTodoComplete = async (id: string, completed: boolean) => {
+  const toggleTodoComplete = useCallback(async (id: string, completed: boolean) => {
     setLoading(true)
     setError(null)
     try {
@@ -104,9 +104,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const deleteTodo = async (id: string) => {
+  const deleteTodo = useCallback(async (id: string) => {
     setLoading(true)
     setError(null)
     try {
@@ -119,11 +119,11 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError(null)
-  }
+  }, [])
 
   const value: TodoContextType = {
     todos,
