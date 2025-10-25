@@ -4,15 +4,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { api } from '../services/pocketbase'
 
-// Mock the useAuth hook
-vi.mock('../contexts/AuthContext', async () => {
-  const actual = await vi.importActual('../contexts/AuthContext')
-  return {
-    ...actual,
-    useAuth: vi.fn(),
-  }
-})
-
 // Mock the API service
 vi.mock('../services/pocketbase', () => ({
   api: {
@@ -27,6 +18,23 @@ vi.mock('../services/pocketbase', () => ({
   },
 }))
 
+// Get mock references
+const mockIsAuthenticated = vi.fn()
+const mockGetCurrentUser = vi.fn()
+const mockLogin = vi.fn()
+const mockRegister = vi.fn()
+const mockLogout = vi.fn()
+const mockRefresh = vi.fn()
+
+// Mock the useAuth hook
+vi.mock('../contexts/AuthContext', async () => {
+  const actual = await vi.importActual('../contexts/AuthContext')
+  return {
+    ...actual,
+    useAuth: vi.fn(),
+  }
+})
+
 
 
 const mockUser = {
@@ -38,13 +46,30 @@ const mockUser = {
 }
 
 describe('AuthContext', () => {
-  beforeEach(() => {
+  let useAuth: any
+
+  beforeEach(async () => {
     vi.clearAllMocks()
     mockIsAuthenticated.mockReturnValue(false)
     mockGetCurrentUser.mockReturnValue(null)
-  })
+    mockLogin.mockResolvedValue(mockUser)
+    mockRegister.mockResolvedValue(mockUser)
+    mockRefresh.mockResolvedValue(mockUser)
 
-  const { useAuth } = await import('../contexts/AuthContext')
+    // Update the API mock to use our functions
+    const apiModule = await import('../services/pocketbase')
+    Object.assign(apiModule.api.auth, {
+      login: mockLogin,
+      register: mockRegister,
+      logout: mockLogout,
+      refresh: mockRefresh,
+      getCurrentUser: mockGetCurrentUser,
+      isAuthenticated: mockIsAuthenticated,
+    })
+
+    const authModule = await import('../contexts/AuthContext')
+    useAuth = authModule.useAuth
+  })
 
   const renderAuthContext = (authOverrides = {}) => {
     const mockAuth = {
