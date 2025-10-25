@@ -389,6 +389,6 @@ describe('TodoPage', () => {
 
     renderTodoPage({ todos: mockTodos })
 
-    expect(screen.getByText(/2 todos?/)).toBeInTheDocument()
+    expect(screen.getByText('Active Todos (2)')).toBeInTheDocument()
   })
 })
