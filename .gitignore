@@ -1,6 +1,19 @@
 # Dependencies
 node_modules/
 */node_modules/
+**/node_modules/
+frontend/node_modules/
+
+# Lock files (except package-lock.json at root)
+*/package-lock.json
+**/package-lock.json
+frontend/package-lock.json
+
+# Test cache and build artifacts
+*.tsbuildinfo
+.vitest/
+frontend/.vitest/
+frontend/coverage/
 
 # Build outputs
 dist/
