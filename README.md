@@ -182,7 +182,7 @@ npm run test:coverage
 ```
 
 **Test Coverage:**
-- ✅ **229 unit & integration tests** (Vitest + React Testing Library)
+- ✅ **242 unit & integration tests** (Vitest + React Testing Library)
   - All React components with user interaction tests
   - API service layer with mocked PocketBase
   - Integration tests with real PocketBase instance
@@ -190,6 +190,7 @@ npm run test:coverage
   - Concurrent operations and race conditions
   - **NEW:** Comprehensive TodoContext tests (32 tests)
   - **NEW:** Token refresh & session expiry tests (20 tests)
+  - **NEW:** Optimistic updates tests (13 tests + 9 skipped future specs)
 - ✅ **100 E2E tests** (Playwright)
   - 26 authentication flow tests
   - 22 todo CRUD operation tests
