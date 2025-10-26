@@ -186,7 +186,7 @@ describe('TodoPage', () => {
       {
         id: '1',
         title: 'Test Todo',
-        description: 'Description',
+        description: 'Test description',
         completed: false,
         priority: 'medium',
         user: '1',
@@ -202,6 +202,111 @@ describe('TodoPage', () => {
 
     await waitFor(() => {
       expect(mockToggleComplete).toHaveBeenCalledWith('1', true)
+    })
+  })
+
+  describe('Checkbox UX Improvements', () => {
+    it('should have distinct styling for selection vs completion checkboxes', async () => {
+      const mockTodos = [
+        {
+          id: '1',
+          title: 'Test Todo',
+          description: 'Test description',
+          completed: false,
+          priority: 'medium',
+          user: '1',
+          created: '2023-01-01T00:00:00Z',
+          updated: '2023-01-01T00:00:00Z',
+        },
+      ]
+
+      renderTodoPage({ todos: mockTodos })
+
+      // Get all checkboxes - there will be 3 (select all + 2 for the todo)
+      const checkboxes = screen.getAllByRole('checkbox')
+      expect(checkboxes).toHaveLength(3)
+
+      // Find selection checkbox (has "Select" in aria-label, but not "Select all")
+      const selectionCheckbox = checkboxes.find(cb =>
+        cb.getAttribute('aria-label')?.includes('Select') &&
+        !cb.getAttribute('aria-label')?.includes('all')
+      )
+
+      // Find completion checkbox (has "Mark" in aria-label)
+      const completionCheckbox = checkboxes.find(cb =>
+        cb.getAttribute('aria-label')?.includes('Mark')
+      )
+
+      expect(selectionCheckbox).toBeInTheDocument()
+      expect(completionCheckbox).toBeInTheDocument()
+
+      // Selection checkbox should have selection-specific styling
+      expect(selectionCheckbox).toHaveClass('checkbox-selection')
+
+      // Completion checkbox should have completion-specific styling
+      expect(completionCheckbox).toHaveClass('checkbox-completion')
+    })
+
+    it('should have proper spacing between selection and completion checkboxes', async () => {
+      const mockTodos = [
+        {
+          id: '1',
+          title: 'Test Todo',
+          description: 'Test description',
+          completed: false,
+          priority: 'medium',
+          user: '1',
+          created: '2023-01-01T00:00:00Z',
+          updated: '2023-01-01T00:00:00Z',
+        },
+      ]
+
+      renderTodoPage({ todos: mockTodos })
+
+      const todoContainer = screen.getByText('Test Todo').closest('.card')
+      expect(todoContainer).toBeInTheDocument()
+
+      const checkboxes = todoContainer!.querySelectorAll('input[type="checkbox"]')
+      expect(checkboxes).toHaveLength(2)
+
+      // Check that checkboxes are properly spaced with new structure
+      const selectionCheckbox = checkboxes[0]
+      const completionCheckbox = checkboxes[1]
+
+      // Checkboxes should be in separate flex containers for better spacing
+      expect(selectionCheckbox.parentElement).toHaveClass('flex', 'flex-col', 'items-center')
+      expect(completionCheckbox.parentElement).toHaveClass('flex', 'flex-col', 'items-center')
+
+      // The parent container should have proper spacing
+      const checkboxContainer = selectionCheckbox.parentElement.parentElement
+      expect(checkboxContainer).toHaveClass('space-x-4')
+    })
+
+    it('should maintain accessibility with proper aria labels', async () => {
+      const mockTodos = [
+        {
+          id: '1',
+          title: 'Test Todo Item',
+          description: 'Test description',
+          completed: false,
+          priority: 'medium',
+          user: '1',
+          created: '2023-01-01T00:00:00Z',
+          updated: '2023-01-01T00:00:00Z',
+        },
+      ]
+
+      renderTodoPage({ todos: mockTodos })
+
+      const selectionCheckbox = screen.getByRole('checkbox', { name: /Select Test Todo Item/i })
+      const completionCheckbox = screen.getByRole('checkbox', { name: /Mark Test Todo Item as/i })
+
+      expect(selectionCheckbox).toBeInTheDocument()
+      expect(completionCheckbox).toBeInTheDocument()
+
+      // Should have descriptive aria labels
+      expect(selectionCheckbox.getAttribute('aria-label')).toBe('Select Test Todo Item')
+      expect(completionCheckbox.getAttribute('aria-label')).toBe('Mark Test Todo Item as complete')
     })
   })
 
