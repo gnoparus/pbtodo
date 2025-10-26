@@ -182,12 +182,14 @@ npm run test:coverage
 ```
 
 **Test Coverage:**
-- ✅ **177 unit & integration tests** (Vitest + React Testing Library)
+- ✅ **229 unit & integration tests** (Vitest + React Testing Library)
   - All React components with user interaction tests
   - API service layer with mocked PocketBase
   - Integration tests with real PocketBase instance
   - Error handling and edge cases
   - Concurrent operations and race conditions
+  - **NEW:** Comprehensive TodoContext tests (32 tests)
+  - **NEW:** Token refresh & session expiry tests (20 tests)
 - ✅ **100 E2E tests** (Playwright)
   - 26 authentication flow tests
   - 22 todo CRUD operation tests
@@ -310,10 +312,11 @@ deleteRule: "@request.auth.id != '' && user = @request.auth.id"
 This project includes comprehensive test coverage at multiple levels:
 
 ### Unit & Integration Tests (Vitest)
-- **177 tests** covering components, contexts, and API services
+- **229 tests** covering components, contexts, and API services
 - React Testing Library for component testing
 - Integration tests with real PocketBase instance
 - Run: `npm run test`
+- Recent improvements: [TEST_IMPROVEMENTS_SUMMARY.md](TEST_IMPROVEMENTS_SUMMARY.md)
 
 ### End-to-End Tests (Playwright)
 - **100 tests** covering complete user workflows
@@ -332,6 +335,8 @@ This project includes comprehensive test coverage at multiple levels:
 - ✅ Data isolation (user-specific data access)
 - ✅ Error handling and edge cases
 - ✅ Responsive design across devices
+- ✅ Token refresh and session expiry handling
+- ✅ TodoContext comprehensive coverage (all CRUD operations)
 
 ## License
 
