@@ -23,6 +23,9 @@ export interface SecurityHeaderConfig {
   allowFullscreen?: boolean
   allowPayment?: boolean
   allowSyncXHR?: boolean
+
+  // HTTPS configuration
+  httpsEnabled?: boolean
 }
 
 /**
@@ -179,7 +182,10 @@ export function applySecurityHeaders(headerConfig: SecurityHeaderConfig = {}): v
   }
 
   // Enhanced Content Security Policy
-  const csp = buildCSP(mergedConfig)
+  const csp = buildCSP({
+    ...mergedConfig,
+    httpsEnabled: config.httpsEnabled
+  })
   const cspHeaderName = mergedConfig.cspReportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy'
 
   // Apply CSP via meta tag (since we can't set HTTP headers from frontend)
