@@ -391,4 +391,511 @@ describe('TodoPage', () => {
 
     expect(screen.getByText('Active Todos (2)')).toBeInTheDocument()
   })
+
+  describe('Security & Edge Cases', () => {
+    describe('XSS Prevention', () => {
+      it('should not execute script tags in todo title', () => {
+        renderTodoPage()
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const xssTitle = '<script>alert("xss")</script>'
+
+        fireEvent.change(titleInput, { target: { value: xssTitle } })
+
+        // Verify the value is set as plain text (React doesn't execute it)
+        expect(titleInput).toHaveValue(xssTitle)
+
+        // Verify no script tags are executed in the DOM
+        expect(document.querySelectorAll('script').length).toBe(0)
+      })
+
+      it('should not execute script tags in description', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+        const xssDescription = '<img src=x onerror=alert(1)>'
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: xssDescription } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', xssDescription, 'medium')
+        })
+      })
+
+      it('should not render script tags from error messages', () => {
+        const xssError = '<script>alert("xss")</script>Failed to create todo'
+        renderTodoPage({ error: xssError })
+
+        // Error should be displayed as text, not executed
+        expect(screen.getByText(xssError)).toBeInTheDocument()
+        // Check that script tag is not in the DOM as an actual script element
+        expect(document.querySelectorAll('script').length).toBe(0)
+      })
+
+      it('should display XSS attempts in todo list as text', () => {
+        const xssTodo = {
+          id: '1',
+          title: '<script>alert("xss")</script>',
+          description: '<img src=x onerror=alert(1)>',
+          completed: false,
+          priority: 'high' as const,
+          user: '1',
+          created: '2023-01-01T00:00:00Z',
+          updated: '2023-01-01T00:00:00Z',
+        }
+
+        renderTodoPage({ todos: [xssTodo] })
+
+        // Script tags should be displayed as text
+        expect(screen.getByText(xssTodo.title)).toBeInTheDocument()
+        expect(screen.getByText(xssTodo.description)).toBeInTheDocument()
+        // Verify no script execution
+        expect(document.querySelectorAll('script').length).toBe(0)
+      })
+    })
+
+    describe('Long Input Handling', () => {
+      it('should show validation error on submit for very long title', async () => {
+        renderTodoPage()
+
+        const longTitle = 'a'.repeat(101)
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: longTitle } })
+
+        // Max length validation only happens on submit, not on blur
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(screen.getByText('Title must be less than 100 characters')).toBeInTheDocument()
+        })
+      })
+
+      it('should accept title at maximum length (100 characters)', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const maxTitle = 'a'.repeat(100)
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: maxTitle } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith(maxTitle, undefined, 'medium')
+        })
+      })
+
+      it('should handle very long description (1000+ characters)', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const longDescription = 'a'.repeat(10000)
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: longDescription } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', longDescription, 'medium')
+        })
+      })
+    })
+
+    describe('Special Characters', () => {
+      it('should handle emoji in todo title', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const emojiTitle = '🎉 Party Time 🚀'
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: emojiTitle } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith(emojiTitle, undefined, 'medium')
+        })
+      })
+
+      it('should handle unicode characters', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const unicodeTitle = '日本語 タスク'
+        const unicodeDescription = 'Descripción en español 中文描述'
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: unicodeTitle } })
+        fireEvent.change(descriptionInput, { target: { value: unicodeDescription } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith(unicodeTitle, unicodeDescription, 'medium')
+        })
+      })
+
+      it('should handle special symbols', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const specialTitle = '!@#$%^&*()_+-=[]{}|;:,.<>?'
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: specialTitle } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith(specialTitle, undefined, 'medium')
+        })
+      })
+    })
+
+    describe('SQL Injection Attempts', () => {
+      it('should handle SQL-like strings in title', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const sqlTitle = "'; DROP TABLE todos; --"
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: sqlTitle } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith(sqlTitle, undefined, 'medium')
+        })
+      })
+
+      it('should handle SQL-like strings in description', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const sqlDescription = "' OR '1'='1"
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: sqlDescription } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', sqlDescription, 'medium')
+        })
+      })
+    })
+
+    describe('Whitespace Handling', () => {
+      it('should reject empty title after trimming', async () => {
+        renderTodoPage()
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        fireEvent.change(titleInput, { target: { value: '   ' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(screen.getByText('Title is required')).toBeInTheDocument()
+        })
+      })
+
+      it('should show validation error for title with only whitespace', async () => {
+        renderTodoPage()
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        fireEvent.change(titleInput, { target: { value: '\t\n  ' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(screen.getByText('Title is required')).toBeInTheDocument()
+        })
+      })
+
+      it('should trim leading/trailing spaces from title', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        fireEvent.change(titleInput, { target: { value: '  Test Todo  ' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', undefined, 'medium')
+        })
+      })
+
+      it('should trim description', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: '  Description  ' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', 'Description', 'medium')
+        })
+      })
+
+      it('should allow spaces within title', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleWithSpaces = 'Todo with multiple spaces'
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: titleWithSpaces } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith(titleWithSpaces, undefined, 'medium')
+        })
+      })
+    })
+
+    describe('Title Length Validation', () => {
+      it('should require minimum 2 characters after trimming', async () => {
+        renderTodoPage()
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        fireEvent.change(titleInput, { target: { value: 'a' } })
+        fireEvent.blur(titleInput)
+
+        await waitFor(() => {
+          expect(screen.getByText('Title must be at least 2 characters')).toBeInTheDocument()
+        })
+      })
+
+      it('should accept exactly 2 characters', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        fireEvent.change(titleInput, { target: { value: 'ab' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('ab', undefined, 'medium')
+        })
+      })
+    })
+
+    describe('Copy/Paste Behavior', () => {
+      it('should handle pasted content in title field', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        // Simulate paste
+        fireEvent.paste(titleInput, {
+          clipboardData: {
+            getData: () => 'Pasted Todo Title'
+          }
+        })
+        fireEvent.change(titleInput, { target: { value: 'Pasted Todo Title' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Pasted Todo Title', undefined, 'medium')
+        })
+      })
+
+      it('should handle pasted content in description field', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+
+        // Simulate paste
+        fireEvent.paste(descriptionInput, {
+          clipboardData: {
+            getData: () => 'Pasted description content'
+          }
+        })
+        fireEvent.change(descriptionInput, { target: { value: 'Pasted description content' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', 'Pasted description content', 'medium')
+        })
+      })
+    })
+
+    describe('Multiple Rapid Submissions', () => {
+      it('should handle multiple rapid form submissions', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const submitButton = screen.getByRole('button', { name: 'Add Todo' })
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+
+        // Click multiple times rapidly
+        fireEvent.click(submitButton)
+        fireEvent.click(submitButton)
+        fireEvent.click(submitButton)
+
+        // Multiple submissions are possible in current implementation
+        // This documents the current behavior
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalled()
+        })
+
+        // Verify createTodo was called at least once
+        expect(mockCreateTodo.mock.calls.length).toBeGreaterThanOrEqual(1)
+      })
+    })
+
+    describe('Priority Selection Edge Cases', () => {
+      it('should handle all priority levels', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const prioritySelect = screen.getByLabelText(/priority/i)
+
+        // Test each priority level
+        const priorities: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high']
+
+        for (const priority of priorities) {
+          fireEvent.change(titleInput, { target: { value: `Todo ${priority}` } })
+          fireEvent.change(prioritySelect, { target: { value: priority } })
+          fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+          await waitFor(() => {
+            expect(mockCreateTodo).toHaveBeenCalledWith(`Todo ${priority}`, undefined, priority)
+          })
+
+          mockCreateTodo.mockClear()
+        }
+      })
+    })
+
+    describe('Control Characters', () => {
+      it('should handle null bytes in title as text', () => {
+        renderTodoPage()
+
+        const titleWithNull = 'Test\x00Todo'
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: titleWithNull } })
+
+        // Verify the value is set (null bytes are treated as text)
+        expect(titleInput).toHaveValue(titleWithNull)
+      })
+
+      it('should handle newlines in description', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const descriptionWithNewlines = 'Line 1\nLine 2\nLine 3'
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: descriptionWithNewlines } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', descriptionWithNewlines, 'medium')
+        })
+      })
+    })
+
+    describe('Empty Description Handling', () => {
+      it('should treat empty description as empty string', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: '' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', undefined, 'medium')
+        })
+      })
+
+      it('should treat whitespace-only description as empty after trimming', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: '   ' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(mockCreateTodo).toHaveBeenCalledWith('Test Todo', undefined, 'medium')
+        })
+      })
+    })
+
+    describe('Form Reset After Submission', () => {
+      it('should clear title after successful submission', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(titleInput).toHaveValue('')
+        })
+      })
+
+      it('should clear description after successful submission', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const descriptionInput = screen.getByLabelText(/description/i)
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(descriptionInput, { target: { value: 'Test Description' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(descriptionInput).toHaveValue('')
+        })
+      })
+
+      it('should reset priority to medium after successful submission', async () => {
+        const mockCreateTodo = vi.fn()
+        renderTodoPage({ createTodo: mockCreateTodo })
+
+        const titleInput = screen.getByLabelText(/todo title/i)
+        const prioritySelect = screen.getByLabelText(/priority/i) as HTMLSelectElement
+
+        fireEvent.change(titleInput, { target: { value: 'Test Todo' } })
+        fireEvent.change(prioritySelect, { target: { value: 'high' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Add Todo' }))
+
+        await waitFor(() => {
+          expect(prioritySelect.value).toBe('medium')
+        })
+      })
+    })
+  })
 })
