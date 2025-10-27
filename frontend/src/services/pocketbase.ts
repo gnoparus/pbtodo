@@ -1,6 +1,11 @@
 import PocketBase from 'pocketbase'
+import { config, validateConfig } from '../config/environment'
 
-const pb = new PocketBase('http://127.0.0.1:8090')
+// Validate environment configuration on import
+validateConfig()
+
+// Initialize PocketBase with environment configuration
+const pb = new PocketBase(config.pocketbaseUrl)
 
 // Disable auto-cancellation for better error handling
 pb.autoCancellation(false)
