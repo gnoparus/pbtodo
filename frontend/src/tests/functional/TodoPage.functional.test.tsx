@@ -292,14 +292,14 @@ describe('TodoPage Functional Tests - Phase 2.3', () => {
       const individualSelectCheckboxes = screen.getAllByRole('checkbox', { name: /Select/i })
         .filter(checkbox => checkbox !== selectAllCheckbox)
 
-      await user.click(individualSelectCheckboxes[0]) // Select first todo (id: '1')
-      await user.click(individualSelectCheckboxes[1]) // Select second todo (id: '2')
+      await user.click(individualSelectCheckboxes[0]) // Select first todo (id: '4' - newest)
+      await user.click(individualSelectCheckboxes[1]) // Select second todo (id: '3' - second newest)
 
       // Click bulk toggle complete
       await user.click(screen.getByRole('button', { name: 'Toggle Complete' }))
 
-      expect(mockToggleTodoComplete).toHaveBeenCalledWith('1', true) // Should complete them
-      expect(mockToggleTodoComplete).toHaveBeenCalledWith('2', true)
+      expect(mockToggleTodoComplete).toHaveBeenCalledWith('4', true) // Should complete them
+      expect(mockToggleTodoComplete).toHaveBeenCalledWith('3', true)
     })
 
     it('should clear selection when clear selection button is clicked', async () => {
@@ -347,13 +347,17 @@ describe('TodoPage Functional Tests - Phase 2.3', () => {
         return content.includes('1') && content.includes('todo') && content.includes('selected')
       })).toBeInTheDocument()
 
+      // Move focus away from the checkbox so keyboard shortcuts work
+      await user.click(document.body) // Click body to remove focus from checkbox
+
       // Press Delete key for bulk delete
       await user.keyboard('{Delete}')
 
-      expect(mockDeleteTodo).toHaveBeenCalledWith('1')
+      expect(mockDeleteTodo).toHaveBeenCalledWith('4') // First todo in sorted order
 
       // Select todo again and press Enter for bulk toggle
       await user.click(selectCheckbox)
+      await user.click(document.body) // Click body to remove focus from checkbox
       await user.keyboard('{Enter}')
 
       expect(mockToggleTodoComplete).toHaveBeenCalled()

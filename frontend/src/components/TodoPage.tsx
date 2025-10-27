@@ -602,21 +602,32 @@ const TodoPage: React.FC = () => {
                 key={todo.id}
                 className={`card hover:shadow-md transition-shadow ${selectedTodos.has(todo.id) ? 'ring-2 ring-blue-500' : ''} ${todo.completed ? 'opacity-75 hover:opacity-100' : ''}`}
               >
-                <div className="flex items-start space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedTodos.has(todo.id)}
-                    onChange={(e) => handleSelectTodo(todo.id, e.target.checked)}
-                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    aria-label={`Select ${todo.title}`}
-                  />
-                  <input
-                    type="checkbox"
-                    checked={todo.completed}
-                    onChange={() => toggleTodoComplete(todo.id, !todo.completed)}
-                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    aria-label={`Mark ${todo.title} as ${todo.completed ? 'active' : 'complete'}`}
-                  />
+                <div className="flex items-start space-x-4">
+                  {/* Selection checkbox - for bulk operations */}
+                  <div className="flex flex-col items-center pt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedTodos.has(todo.id)}
+                      onChange={(e) => handleSelectTodo(todo.id, e.target.checked)}
+                      className="checkbox-selection"
+                      aria-label={`Select ${todo.title}`}
+                    />
+                    <span className="text-xs text-gray-500 mt-1 hidden sm:block">Select</span>
+                  </div>
+
+                  {/* Completion checkbox - for marking todo as complete */}
+                  <div className="flex flex-col items-center pt-1">
+                    <input
+                      type="checkbox"
+                      checked={todo.completed}
+                      onChange={() => toggleTodoComplete(todo.id, !todo.completed)}
+                      className="checkbox-completion"
+                      aria-label={`Mark ${todo.title} as ${todo.completed ? 'active' : 'complete'}`}
+                    />
+                    <span className="text-xs text-gray-500 mt-1 hidden sm:block">
+                      {todo.completed ? 'Done' : 'Do'}
+                    </span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
