@@ -39,6 +39,18 @@ const renderRegisterPage = (authOverrides = {}) => {
     logout: vi.fn(),
     refreshAuth: vi.fn(),
     clearError: vi.fn(),
+    rateLimitStatus: {
+      canLogin: true,
+      canRegister: true,
+      loginAttempts: 0,
+      loginRemaining: 5,
+      loginBlocked: false,
+      loginBlockExpires: 0,
+      registrationAttempts: 0,
+      registrationRemaining: 3,
+      registrationBlocked: false,
+      registrationBlockExpires: 0,
+    },
     ...authOverrides,
   }
 
