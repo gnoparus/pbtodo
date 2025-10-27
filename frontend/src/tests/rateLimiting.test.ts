@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  RateLimiter,
+import RateLimiter, {
   getRateLimiter,
   getAuthRateLimiter,
   getRegistrationRateLimiter,
@@ -426,9 +425,9 @@ describe('Performance Considerations', () => {
     const originalSetItem = localStorage.setItem
     let setItemCalls = 0
 
-    localStorage.setItem = vi.fn(() => {
+    localStorage.setItem = vi.fn(function(...args) {
       setItemCalls++
-      return originalSetItem.apply(localStorage, arguments as any)
+      return originalSetItem.apply(localStorage, args as any)
     })
 
     // Make multiple calls
