@@ -188,23 +188,25 @@ validate_database_connectivity() {
 
         log_info "Testing database connectivity: $health_url"
 
-        local response=$(curl -s -f -w "%{http_code}" "$health_url" 2>/dev/null || echo "000")
+        local response_code=$(curl -s -f -w "%{http_code}" "$health_url" 2>/dev/null | tail -c3)
+        local response_body=$(curl -s "$health_url" 2>/dev/null)
 
-        if [ "$response" = "200" ]; then
+        if [ "$response_code" = "200" ]; then
             log_success "✓ Database connectivity confirmed"
         else
-            log_error "Database connectivity failed (HTTP: $response)"
+            log_error "Database connectivity failed (HTTP: $response_code)"
+            log_error "Response: $response_body"
             exit 1
         fi
 
         # Test database collection access
         local collections_url="$VITE_POCKETBASE_URL/api/collections"
-        local collections_response=$(curl -s -f -w "%{http_code}" "$collections_url" 2>/dev/null || echo "000")
+        local collections_code=$(curl -s -f -w "%{http_code}" "$collections_url" 2>/dev/null | tail -c3)
 
-        if [ "$collections_response" = "200" ]; then
+        if [ "$collections_code" = "200" ]; then
             log_success "✓ Database collections accessible"
         else
-            log_warning "Database collections not accessible (HTTP: $collections_response)"
+            log_warning "Database collections not accessible (HTTP: $collections_code)"
         fi
     else
         log_warning "PocketBase URL not configured"
