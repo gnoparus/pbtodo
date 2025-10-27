@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
+import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest'
 import PocketBase from 'pocketbase'
 
 // Mock environment variables for integration tests
