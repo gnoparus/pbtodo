@@ -56,7 +56,7 @@ class RateLimiter {
     }
 
     // Check if attempt is allowed
-    const remaining = Math.max(0, this.config.maxAttempts - this.attempts - 1)
+    const remaining = Math.max(0, this.config.maxAttempts - this.attempts)
 
     return {
       attempts: this.attempts,
@@ -255,6 +255,11 @@ export function getApiRateLimiter(): RateLimiter {
  * Utility function to format time remaining
  */
 export function formatTimeRemaining(seconds: number): string {
+  // Handle negative or zero values
+  if (seconds <= 0) {
+    return '0 seconds'
+  }
+
   if (seconds < 60) {
     return `${seconds} second${seconds !== 1 ? 's' : ''}`
   } else if (seconds < 3600) {

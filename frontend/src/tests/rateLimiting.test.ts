@@ -49,14 +49,18 @@ describe('RateLimiter Class', () => {
     })
 
     it('should reset after window expires', () => {
+      // Set fake timers with initial time
+      const startTime = Date.now()
+      vi.useFakeTimers()
+      vi.setSystemTime(startTime)
+
       // Record attempts
       for (let i = 0; i < 5; i++) {
         rateLimiter.recordAttempt()
       }
 
-      // Mock time passage
-      vi.useFakeTimers()
-      vi.advanceTimersByTime(61000) // Just over 1 minute
+      // Mock time passage (301 seconds, just over 5 minute block duration)
+      vi.advanceTimersByTime(301000)
 
       const status = rateLimiter.canAttempt()
       expect(status.isBlocked).toBe(false)
