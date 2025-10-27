@@ -1,20 +1,24 @@
 import React, { useState, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { validateEmail } from '../utils/validation'
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
-  const { login, loading, error, clearError } = useAuth()
+  const { login, loading, error, clearError, rateLimitStatus } = useAuth()
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {}
 
     if (!email) {
       newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid'
+    } else {
+      const emailValidation = validateEmail(email)
+      if (!emailValidation.isValid) {
+        newErrors.email = emailValidation.error || 'Email is invalid'
+      }
     }
 
     if (!password) {
@@ -40,6 +44,28 @@ const LoginPage: React.FC = () => {
     } catch (err) {
       // Error is handled by the auth context
     }
+  }
+
+  // Check if login is rate limited
+  if (rateLimitStatus.loginBlocked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Login Temporarily Blocked
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  Too many failed login attempts. Please try again later.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
