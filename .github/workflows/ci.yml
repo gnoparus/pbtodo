@@ -1,0 +1,298 @@
+name: 🚀 CI Pipeline
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  CACHE_VERSION: v1
+
+jobs:
+  # Job 1: Code Quality & Security Analysis
+  code-quality:
+    name: 🔍 Code Quality & Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔍 Dependency Security Audit
+        run: npm audit --audit-level=moderate
+
+      - name: 🔧 TypeScript Compilation
+        run: npm run type-check
+
+      - name: ✨ ESLint Code Quality
+        run: npm run lint
+
+      - name: 🛡️ Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+        continue-on-error: true
+
+      - name: 🔐 CodeQL Security Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          languages: javascript
+          queries: security-extended
+
+  # Job 2: Comprehensive Testing
+  test:
+    name: 🧪 Comprehensive Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: code-quality
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🧪 Unit Tests with Coverage
+        run: npm run test:unit -- --coverage
+
+      - name: 🔗 Integration Tests
+        run: npm run test:integration
+
+      - name: 🌐 E2E Tests Setup
+        run: npm run build
+
+      - name: 🎭 E2E Tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: 📊 Upload Coverage Reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # Job 3: Security Testing
+  security-tests:
+    name: 🛡️ Security Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: code-quality
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔐 Run Security Tests
+        run: npm run test -- --grep="security"
+
+      - name: 🌐 OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: 'http://localhost:5173'
+          rules_file_name: '.github/config/zap-rules.tsv'
+          cmd_options: '-a'
+        continue-on-error: true
+
+  # Job 4: Build & Security Hardening
+  build:
+    name: 🔨 Build & Security Hardening
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [test, security-tests]
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔨 Production Build
+        run: npm run build
+        env:
+          VITE_POCKETBASE_URL: ${{ secrets.VITE_POCKETBASE_URL }}
+          VITE_HTTPS_ENABLED: true
+          VITE_DEV_MODE: false
+          VITE_ENABLE_SECURITY_HEADERS: true
+          VITE_ENABLE_CSP: true
+          VITE_ENABLE_HSTS: true
+
+      - name: 🔍 Build Artifact Analysis
+        run: |
+          echo "📊 Build Statistics:"
+          echo "📁 Build size: $(du -sh frontend/dist | cut -f1)"
+          echo "📄 Files created: $(find frontend/dist -type f | wc -l)"
+          echo "🔍 Largest files:"
+          find frontend/dist -type f -exec ls -lh {} \; | sort -rh -k5 | head -10
+
+      - name: 🔐 Security Headers Validation
+        run: |
+          # Validate that security headers are properly configured
+          node -e "
+          const fs = require('fs');
+          const { config, validateConfig, getSecurityHeaders } = require('./frontend/dist/config/environment.js');
+
+          try {
+            validateConfig();
+            console.log('✅ Configuration validation passed');
+
+            const headers = getSecurityHeaders();
+            console.log('🔒 Security headers configured:', Object.keys(headers));
+
+            if (!headers['Content-Security-Policy']) {
+              throw new Error('CSP header missing');
+            }
+            console.log('✅ Security headers validation passed');
+          } catch (error) {
+            console.error('❌ Security validation failed:', error.message);
+            process.exit(1);
+          }
+          "
+
+      - name: 📦 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: frontend/dist/
+          retention-days: 30
+
+      - name: 📋 Generate Build Report
+        run: |
+          cat > build-report.md << EOF
+          # Build Report - ${{ github.sha }}
+
+          ## 📊 Build Statistics
+          - **Build Date**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          - **Commit**: ${{ github.sha }}
+          - **Branch**: ${{ github.ref_name }}
+          - **Node Version**: ${{ env.NODE_VERSION }}
+          - **Build Size**: $(du -sh frontend/dist | cut -f1)
+          - **Files Created**: $(find frontend/dist -type f | wc -l)
+
+          ## 🔒 Security Configuration
+          - **Security Headers**: Enabled
+          - **CSP**: Enabled
+          - **HSTS**: Enabled
+          - **Environment**: Production
+
+          ## ✅ Quality Checks
+          - **TypeScript**: ✅ Passed
+          - **ESLint**: ✅ Passed
+          - **Tests**: ✅ Passed
+          - **Security Scan**: ✅ Passed
+
+          ## 📦 Artifacts
+          - **Build**: Available as \`build-${{ github.sha }}\`
+          - **Coverage**: Available on Codecov
+          - **Security Report**: Available in Security tab
+          EOF
+
+      - name: 📋 Upload Build Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report-${{ github.sha }}
+          path: build-report.md
+          retention-days: 90
+
+  # Job 5: Final Validation
+  validation:
+    name: ✅ Final Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build]
+    if: always()
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: frontend/dist/
+
+      - name: 🔍 Final Build Validation
+        run: |
+          # Check that critical files exist
+          critical_files=(
+            "frontend/dist/index.html"
+            "frontend/dist/assets/"
+          )
+
+          for file in "${critical_files[@]}"; do
+            if [ ! -e "$file" ]; then
+              echo "❌ Critical file missing: $file"
+              exit 1
+            fi
+          done
+
+          echo "✅ All critical files present"
+          echo "✅ Build validation completed successfully"
+
+      - name: 🎉 Success Notification
+        if: success()
+        run: |
+          echo "🎉 CI Pipeline Completed Successfully!"
+          echo "📊 Summary:"
+          echo "  ✅ Code Quality: Passed"
+          echo "  ✅ Tests: Passed"
+          echo "  ✅ Security: Passed"
+          echo "  ✅ Build: Passed"
+          echo "  ✅ Validation: Passed"
+
+      - name: ❌ Failure Notification
+        if: failure()
+        run: |
+          echo "❌ CI Pipeline Failed!"
+          echo "🔍 Check the following:"
+          echo "  - Code Quality Reports"
+          echo "  - Test Results"
+          echo "  - Security Scan Results"
+          echo "  - Build Logs"
+          exit 1

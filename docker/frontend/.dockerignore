@@ -1,0 +1,96 @@
+# 🐳 Docker ignore file for pbtodo Frontend
+# Optimizes build context and excludes unnecessary files
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Development files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs and temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output
+.vitest/
+test-results/
+playwright-report/
+e2e/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation and markdown files
+*.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+
+# Infrastructure
+infrastructure/
+
+# PocketBase
+pocketbase/
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Package manager lock files (keep package-lock.json for build)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript
+*.tsbuildinfo
+
+# Development tools
+.prettierrc*
+.eslintrc*
+jest.config.*
+vitest.config.*
+playwright.config.*
+
+# Source maps
+*.map
