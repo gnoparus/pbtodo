@@ -62,12 +62,18 @@ Frontend (Vite + React + Tailwind) → PocketBase SDK → PocketBase Server (Sel
 
 ```
 pbtodo/
+├── e2e/                     # End-to-end tests (Playwright)
+│   ├── fixtures/           # Test data fixtures
+│   ├── pages/              # Page Object Models
+│   ├── tests/              # E2E test files
+│   ├── utils/              # Test helper utilities
+│   └── README.md          # E2E testing documentation
 ├── frontend/                 # Vite + React + Tailwind
 │   ├── src/
 │   │   ├── components/       # React components
 │   │   ├── contexts/        # React contexts (Auth, Todo)
 │   │   ├── services/        # API service layer
-│   │   ├── tests/           # Test files
+│   │   ├── tests/           # Unit & integration tests
 │   │   └── ...
 │   ├── package.json
 │   └── vite.config.ts
@@ -78,7 +84,9 @@ pbtodo/
 │   │   ├── ...
 │   │   └── 007_add_todos_permissions.js
 │   └── README.md          # PocketBase setup guide
+├── playwright.config.ts     # Playwright E2E test configuration
 ├── package.json           # Root workspace configuration
+├── E2E_TEST_SUMMARY.md    # E2E test implementation summary
 └── README.md             # This file
 ```
 
@@ -89,9 +97,21 @@ pbtodo/
 ```bash
 # Development
 npm run dev              # Start frontend dev server
-npm run test             # Run all tests in watch mode
+npm run test             # Run unit & integration tests
 npm run test:ui          # Run tests with Vitest UI
 npm run test:coverage    # Run tests with coverage report
+
+# E2E Testing
+npm run test:e2e         # Run all E2E tests
+npm run test:e2e:ui      # Run E2E tests in UI mode
+npm run test:e2e:headed  # Run E2E tests in headed mode
+npm run test:e2e:debug   # Run E2E tests in debug mode
+npm run test:e2e:chrome  # Run E2E tests in Chrome only
+npm run test:e2e:firefox # Run E2E tests in Firefox only
+npm run test:e2e:webkit  # Run E2E tests in Safari only
+npm run test:e2e:mobile  # Run E2E tests on mobile viewports
+npm run test:e2e:report  # View E2E test report
+npm run test:all         # Run all tests (unit + integration + E2E)
 
 # Building
 npm run build            # Build for production
@@ -162,19 +182,30 @@ npm run test:coverage
 ```
 
 **Test Coverage:**
-- ✅ 177 passing tests
-- ✅ All React components with user interaction tests
-- ✅ API service layer with mocked PocketBase
-- ✅ Integration tests with real PocketBase instance
-- ✅ Error handling and edge cases
-- ✅ Concurrent operations and race conditions
-- ✅ Authentication flows
-- ✅ CRUD operations for todos
+- ✅ **177 unit & integration tests** (Vitest + React Testing Library)
+  - All React components with user interaction tests
+  - API service layer with mocked PocketBase
+  - Integration tests with real PocketBase instance
+  - Error handling and edge cases
+  - Concurrent operations and race conditions
+- ✅ **100 E2E tests** (Playwright)
+  - 26 authentication flow tests
+  - 22 todo CRUD operation tests
+  - 28 navigation and routing tests
+  - 24 edge case and error handling tests
+  - Multi-browser testing (Chrome, Firefox, Safari)
+  - Responsive design testing (mobile, tablet, desktop)
 
-**Before Running Tests:**
+**Before Running Unit/Integration Tests:**
 1. Start PocketBase server: `cd pocketbase && ./pocketbase serve`
 2. Migrations are applied automatically on server start
 3. Test users are created automatically during test setup
+
+**Before Running E2E Tests:**
+1. Start PocketBase server: `cd pocketbase && ./pocketbase serve`
+2. Start frontend dev server: `npm run dev`
+3. Run E2E tests: `npm run test:e2e`
+4. See [e2e/README.md](e2e/README.md) for detailed E2E testing guide
 
 ### API Integration
 
@@ -274,6 +305,34 @@ deleteRule: "@request.auth.id != '' && user = @request.auth.id"
 4. Ensure all tests pass
 5. Submit a pull request
 
+## Testing
+
+This project includes comprehensive test coverage at multiple levels:
+
+### Unit & Integration Tests (Vitest)
+- **177 tests** covering components, contexts, and API services
+- React Testing Library for component testing
+- Integration tests with real PocketBase instance
+- Run: `npm run test`
+
+### End-to-End Tests (Playwright)
+- **100 tests** covering complete user workflows
+- Multi-browser testing (Chrome, Firefox, Safari)
+- Mobile and responsive design testing
+- Page Object Model architecture
+- Run: `npm run test:e2e`
+- Documentation: [e2e/README.md](e2e/README.md)
+- Implementation details: [E2E_TEST_SUMMARY.md](E2E_TEST_SUMMARY.md)
+
+### Test Categories
+- ✅ Authentication flows (registration, login, logout, session management)
+- ✅ Todo CRUD operations (create, read, update, delete)
+- ✅ Navigation and routing (protected routes, redirects, browser navigation)
+- ✅ Form validation (client-side and server-side)
+- ✅ Data isolation (user-specific data access)
+- ✅ Error handling and edge cases
+- ✅ Responsive design across devices
+
 ## License
 
 MIT License - see LICENSE file for details
@@ -282,6 +341,6 @@ MIT License - see LICENSE file for details
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 - **Backend**: PocketBase (Go-based BaaS)
-- **Testing**: Vitest, React Testing Library
+- **Testing**: Vitest, React Testing Library, Playwright
 - **Routing**: React Router v6
 - **State Management**: React Context API

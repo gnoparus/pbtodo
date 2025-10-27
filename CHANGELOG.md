@@ -7,7 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Added - E2E Testing Infrastructure (Phase 1-2)
+
+**E2E Test Framework Setup:**
+- Playwright E2E testing framework with multi-browser support
+- Page Object Model (POM) architecture for maintainable tests
+- Test fixtures for consistent test data (users, todos)
+- Test helper utilities for common operations
+- Comprehensive test documentation
+
+**E2E Test Coverage (100 test cases):**
+- Authentication flows: 26 test cases
+  - User registration with validation
+  - User login with error handling
+  - Logout functionality
+  - Route protection and redirects
+  - Session management and persistence
+- Todo CRUD operations: 22 test cases
+  - Create, read, update, delete operations
+  - Priority management
+  - Completion toggle
+- Navigation: 28 test cases
+  - Route protection
+  - Page transitions
+  - Browser navigation (back/forward)
+  - Header navigation
+  - Responsive behavior (mobile, tablet, desktop)
+  - Direct URL access
+- Edge cases: 24 test cases
+  - Form validation
+  - Data isolation between users
+  - Concurrent operations
+  - Session expiry
+  - Special characters and unicode
+  - Empty states
+  - Loading states
+  - Error recovery
+
+**Infrastructure:**
+- Page Object Models: BasePage, LoginPage, RegisterPage, TodoPage
+- Browser support: Chromium, Firefox, WebKit (Safari)
+- Mobile testing: iPhone 12, Pixel 5 viewports
+- Automatic screenshot and video on failure
+- HTML test reports with trace viewer
+
+### Added - Previous Features
 - Comprehensive test suite with 177 passing tests
 - PocketBase migration `007_add_todos_permissions.js` for proper collection setup
 - Automated test user creation in test setup
@@ -44,6 +88,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outdated `scripts/setup-test-collections.js` (replaced by migrations)
 - Backup test file `todos.integration.test.ts.backup`
 - Deprecated migrations (001-006) superseded by migration 007
+
+### Known Limitations
+- LoginPage and RegisterPage components do not programmatically redirect after successful authentication
+- E2E tests work with current implementation but manual navigation may be required in some scenarios
+- This will be addressed in a future update to improve UX
 
 ## Migration Details
 
