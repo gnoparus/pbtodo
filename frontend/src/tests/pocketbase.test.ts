@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { api } from '../services/pocketbase'
+import { api, Todo } from '../services/pocketbase'
 import { userManager, dataManager } from './integration/setup'
 
 describe('PocketBase Service', () => {
@@ -175,7 +175,7 @@ describe('PocketBase Service', () => {
 
     it('should handle todos with different priorities', async () => {
       const priorities: Array<'low' | 'medium' | 'high'> = ['low', 'medium', 'high']
-      const todos = []
+      const todos: Todo[] = []
 
       for (const priority of priorities) {
         const todo = await api.todos.create({

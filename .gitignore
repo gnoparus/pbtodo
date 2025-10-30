@@ -15,12 +15,50 @@ build/
 */dist/
 */build/
 
+# CI/CD Artifacts and Reports
+reports/
+artifacts/
+.github/workflows/*/reports/
+.github/workflows/*/artifacts/
+*.test-report.*
+*.security-report.*
+*.build-report.*
+environment-report-*.json
+deployment-validation-*.json
+ci-pipeline-report-*.json
+
+# Test Results and Coverage
+coverage/
+*.lcov
+*/coverage/
+frontend/coverage/
+.nyc_output
+.vitest/
+frontend/.vitest/
+test-results/
+playwright-report/
+tests/cicd/*.log
+tests/cicd/test-results/
+tests/cicd/coverage/
+tests/reports/
+*.test-summary.*
+*.validation-report.*
+
 # Environment files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# CI/CD Environment Files (keep .env.example)
+environments/*/.env*
+environments/*/.env.local
+environments/*/.env.test.*
+environments/*/.env.development.local
+environments/*/.env.staging.local
+environments/*/.env.production.local
+!environments/*/.env.example
 
 # Logs
 npm-debug.log*
@@ -34,17 +72,6 @@ pids
 *.pid
 *.seed
 *.pid.lock
-
-# Coverage and testing
-coverage/
-*.lcov
-*/coverage/
-frontend/coverage/
-.nyc_output
-.vitest/
-frontend/.vitest/
-test-results/
-playwright-report/
 
 # Cache directories
 .cache
@@ -87,6 +114,13 @@ public
 tmp/
 temp/
 
+# CI/CD Temporary Files
+.environment-setup-complete
+.deployment-validation-complete
+.ci-pipeline-complete
+*.pid
+*.lock
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -112,3 +146,38 @@ pocketbase/pb_data/
 pocketbase/pb_hooks/
 pocketbase/*.db
 pocketbase/*.log
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Monitoring and Metrics
+prometheus_data/
+grafana_data/
+*.metrics
+*.monitoring
+
+# Backup files
+*.backup
+*.bak
+backups/
+*.restore
+
+# SSL certificates (keep in infrastructure/ssl)
+*.pem
+*.key
+*.crt
+*.csr
+!infrastructure/ssl/
+
+# Security scan results
+*.sarif
+security-reports/
+vulnerability-reports/
+snyk-report.*
+audit-report.*
+
+# IDE specific
+*.sublime-*
+.vscode/settings.json
+.idea/workspace.xml

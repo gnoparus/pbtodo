@@ -6,14 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "type-check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:integration": "vitest run src/tests/integration",
-    "test:unit": "vitest run src/tests --exclude='src/tests/integration/**'",
-    "test:all": "npm run test:unit && npm run test:integration"
+    "test:integration": "vitest run src/tests/integration/**/*.test.{ts,tsx}",
+    "test:unit": "vitest run src/tests --exclude '**/integration/**'",
+    "test:all": "npm run test:unit --workspace=frontend && npm run test:integration --workspace=frontend"
   },
   "dependencies": {
     "pocketbase": "^0.20.1",

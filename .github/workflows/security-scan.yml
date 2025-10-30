@@ -1,0 +1,407 @@
+name: 🛡️ Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scan daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Job 1: Dependency Security Analysis
+  dependency-scan:
+    name: 🔍 Dependency Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔍 npm Audit Security Check
+        run: |
+          echo "🔍 Running npm security audit..."
+          npm audit --audit-level=moderate
+
+          # Generate audit report
+          npm audit --json > audit-report.json
+
+          # Check for critical vulnerabilities
+          critical_vulns=$(npm audit --json | jq -r '.vulnerabilities | to_entries | map(select(.value.severity == "critical")) | length')
+
+          if [ "$critical_vulns" -gt 0 ]; then
+            echo "❌ Found $critical_vulns critical vulnerabilities"
+            npm audit --audit-level=critical
+            exit 1
+          fi
+
+          echo "✅ No critical vulnerabilities found"
+
+      - name: 🛡️ Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json > snyk-report.json || true
+        continue-on-error: true
+
+      - name: 📊 Snyk Results Summary
+        if: always()
+        run: |
+          if [ -f snyk-report.json ]; then
+            echo "📊 Snyk Scan Results:"
+            echo "Critical: $(jq -r '.vulnerabilities | map(select(.severity == "critical")) | length' snyk-report.json)"
+            echo "High: $(jq -r '.vulnerabilities | map(select(.severity == "high")) | length' snyk-report.json)"
+            echo "Medium: $(jq -r '.vulnerabilities | map(select(.severity == "medium")) | length' snyk-report.json)"
+            echo "Low: $(jq -r '.vulnerabilities | map(select(.severity == "low")) | length' snyk-report.json)"
+          fi
+
+      - name: 📦 Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports-${{ github.sha }}
+          path: |
+            audit-report.json
+            snyk-report.json
+          retention-days: 30
+
+  # Job 2: Static Application Security Testing (SAST)
+  sast-analysis:
+    name: 🔐 Static Application Security Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔐 CodeQL Security Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          languages: javascript
+          queries: security-extended
+          output: sarif-results/
+
+      - name: 🔍 Semgrep Security Scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/javascript
+            p/typescript
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🎭 Custom Security Rules Scan
+        run: |
+          echo "🔍 Running custom security rules..."
+
+          # Scan for hardcoded secrets
+          if grep -r -i "password\\|secret\\|key\\|token" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" src/ | grep -v "node_modules" | grep -v "// password" | grep -v "// secret"; then
+            echo "⚠️ Potential hardcoded secrets found"
+            exit 1
+          fi
+
+          # Scan for insecure practices
+          security_issues=0
+
+          # Check for eval usage
+          if grep -r "eval(" --include="*.ts" --include="*.tsx" src/; then
+            echo "❌ eval() usage detected - security risk"
+            security_issues=$((security_issues + 1))
+          fi
+
+          # Check for innerHTML usage
+          if grep -r "innerHTML" --include="*.ts" --include="*.tsx" src/ | grep -v "// innerHTML"; then
+            echo "⚠️ innerHTML usage detected - potential XSS risk"
+            security_issues=$((security_issues + 1))
+          fi
+
+          # Check for localStorage token storage
+          if grep -r "localStorage.*token" --include="*.ts" --include="*.tsx" src/; then
+            echo "⚠️ localStorage token storage detected - XSS vulnerable"
+            security_issues=$((security_issues + 1))
+          fi
+
+          if [ $security_issues -gt 0 ]; then
+            echo "❌ Found $security_issues security issues"
+            exit 1
+          fi
+
+          echo "✅ Custom security scan passed"
+
+      - name: 📦 Upload SAST Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-results-${{ github.sha }}
+          path: |
+            sarif-results/
+            semgrep-report.json
+          retention-days: 30
+
+  # Job 3: Infrastructure Security Scan
+  infrastructure-security:
+    name: 🏗️ Infrastructure Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Checkov Infrastructure Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infrastructure/
+          framework: terraform
+          output: cli
+          output_file_path: checkov-report.txt
+          soft_fail: true
+        continue-on-error: true
+
+      - name: 🔐 Nginx Configuration Security
+        run: |
+          echo "🔍 Scanning Nginx configuration..."
+
+          if [ -f "infrastructure/nginx/nginx.conf" ]; then
+            # Check for security headers
+            security_headers=(
+              "X-Frame-Options"
+              "X-Content-Type-Options"
+              "X-XSS-Protection"
+              "Strict-Transport-Security"
+            )
+
+            for header in "${security_headers[@]}"; do
+              if grep -q "$header" infrastructure/nginx/nginx.conf; then
+                echo "✅ $header configured"
+              else
+                echo "⚠️ $header not found in Nginx config"
+              fi
+            done
+
+            # Check for SSL configuration
+            if grep -q "ssl_protocols" infrastructure/nginx/nginx.conf; then
+              echo "✅ SSL protocols configured"
+            else
+              echo "⚠️ SSL protocols not explicitly configured"
+            fi
+          fi
+
+      - name: 🔍 Shell Script Security Analysis
+        run: |
+          echo "🔍 Analyzing shell scripts for security..."
+
+          # Find all shell scripts
+          find infrastructure/scripts/ -name "*.sh" -type f | while read script; do
+            echo "🔍 Analyzing $script"
+
+            # Check for common security issues
+            security_issues=0
+
+            # Check for hardcoded passwords
+            if grep -q -i "password.*=" "$script" | grep -v "read.*password"; then
+              echo "⚠️ Potential hardcoded password in $script"
+              security_issues=$((security_issues + 1))
+            fi
+
+            # Check for unsafe temp directories
+            if grep -q "/tmp" "$script"; then
+              echo "⚠️ Unsafe temp directory usage in $script"
+              security_issues=$((security_issues + 1))
+            fi
+
+            # Check for proper error handling
+            if ! grep -q "set -euo pipefail" "$script"; then
+              echo "⚠️ Missing proper error handling in $script"
+              security_issues=$((security_issues + 1))
+            fi
+
+            if [ $security_issues -eq 0 ]; then
+              echo "✅ $script passed security analysis"
+            else
+              echo "❌ $script has $security_issues security issues"
+            fi
+          done
+
+      - name: 📦 Upload Infrastructure Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-security-${{ github.sha }}
+          path: |
+            checkov-report.txt
+          retention-days: 30
+
+  # Job 4: Security Score Calculation
+  security-score:
+    name: 📊 Security Score Calculation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [dependency-scan, sast-analysis, infrastructure-security]
+    if: always()
+
+    steps:
+      - name: 📥 Download All Security Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-security-${{ github.sha }}"
+          merge-multiple: true
+
+      - name: 📊 Calculate Security Score
+        run: |
+          echo "📊 Calculating security score for pbtodo..."
+
+          # Initialize scores
+          dependency_score=0
+          sast_score=0
+          infrastructure_score=0
+
+          # Dependency security scoring
+          if [ -f audit-report.json ]; then
+            critical_vulns=$(jq -r '.vulnerabilities | to_entries | map(select(.value.severity == "critical")) | length' audit-report.json 2>/dev/null || echo 0)
+            high_vulns=$(jq -r '.vulnerabilities | to_entries | map(select(.value.severity == "high")) | length' audit-report.json 2>/dev/null || echo 0)
+
+            if [ "$critical_vulns" -eq 0 ] && [ "$high_vulns" -eq 0 ]; then
+              dependency_score=10
+            elif [ "$critical_vulns" -eq 0 ] && [ "$high_vulns" -le 2 ]; then
+              dependency_score=8
+            elif [ "$critical_vulns" -eq 0 ]; then
+              dependency_score=6
+            elif [ "$critical_vulns" -le 2 ]; then
+              dependency_score=4
+            else
+              dependency_score=2
+            fi
+          else
+            dependency_score=5
+          fi
+
+          # SAST scoring
+          if [ -d sarif-results ]; then
+            findings=$(find sarif-results -name "*.sarif" | xargs cat | jq -r '.runs[0].results | length' 2>/dev/null || echo 0)
+            if [ "$findings" -eq 0 ]; then
+              sast_score=10
+            elif [ "$findings" -le 5 ]; then
+              sast_score=8
+            elif [ "$findings" -le 10 ]; then
+              sast_score=6
+            elif [ "$findings" -le 20 ]; then
+              sast_score=4
+            else
+              sast_score=2
+            fi
+          else
+            sast_score=5
+          fi
+
+          # Infrastructure scoring
+          if [ -f checkov-report.txt ]; then
+            failed_checks=$(grep "FAILED" checkov-report.txt | wc -l || echo 0)
+            if [ "$failed_checks" -eq 0 ]; then
+              infrastructure_score=10
+            elif [ "$failed_checks" -le 3 ]; then
+              infrastructure_score=8
+            elif [ "$failed_checks" -le 6 ]; then
+              infrastructure_score=6
+            elif [ "$failed_checks" -le 10 ]; then
+              infrastructure_score=4
+            else
+              infrastructure_score=2
+            fi
+          else
+            infrastructure_score=5
+          fi
+
+          # Calculate overall score
+          total_score=$(( (dependency_score + sast_score + infrastructure_score) / 3 ))
+
+          echo "📊 Security Score Breakdown:"
+          echo "  🔍 Dependency Security: $dependency_score/10"
+          echo "  🔐 SAST Analysis: $sast_score/10"
+          echo "  🏗️ Infrastructure Security: $infrastructure_score/10"
+          echo "  🎯 Overall Security Score: $total_score/10"
+
+          # Create security report
+          cat > security-score-report.md << EOF
+          # Security Score Report - ${{ github.sha }}
+
+          ## 📊 Overall Security Score: $total_score/10
+
+          ### 🔍 Dependency Security: $dependency_score/10
+          - Critical Vulnerabilities: $critical_vulns
+          - High Vulnerabilities: $high_vulns
+          - Status: $([ $dependency_score -ge 8 ] && echo "✅ Excellent" || [ $dependency_score -ge 6 ] && echo "⚠️ Good" || echo "❌ Needs Improvement")
+
+          ### 🔐 SAST Analysis: $sast_score/10
+          - Security Findings: $findings
+          - Status: $([ $sast_score -ge 8 ] && echo "✅ Excellent" || [ $sast_score -ge 6 ] && echo "⚠️ Good" || echo "❌ Needs Improvement")
+
+          ### 🏗️ Infrastructure Security: $infrastructure_score/10
+          - Failed Security Checks: $failed_checks
+          - Status: $([ $infrastructure_score -ge 8 ] && echo "✅ Excellent" || [ $infrastructure_score -ge 6 ] && echo "⚠️ Good" || echo "❌ Needs Improvement")
+
+          ## 🎯 Recommendations
+          $([ $total_score -lt 8 ] && echo "- 🚨 Security score below 8 - immediate attention required" || echo "- ✅ Good security score - maintain current practices")
+          $([ $dependency_score -lt 6 ] && echo "- 🔍 Address critical and high dependency vulnerabilities" || echo "")
+          $([ $sast_score -lt 6 ] && echo "- 🔐 Review and fix SAST findings" || echo "")
+          $([ $infrastructure_score -lt 6 ] && echo "- 🏗️ Improve infrastructure security configuration" || echo "")
+
+          ---
+          *Generated on $(date -u +"%Y-%m-%dT%H:%M:%SZ")*
+          EOF
+
+          echo "SECURITY_SCORE=$total_score" >> $GITHUB_ENV
+          echo "SECURITY_STATUS=$([ $total_score -ge 8 ] && echo "PASS" || echo "FAIL")" >> $GITHUB_ENV
+
+      - name: 📋 Upload Security Score Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-score-${{ github.sha }}
+          path: security-score-report.md
+          retention-days: 90
+
+      - name: 🎉 Security Summary
+        run: |
+          echo "🛡️ Security Scan Summary:"
+          echo "📊 Security Score: ${{ env.SECURITY_SCORE }}/10"
+          echo "📈 Status: ${{ env.SECURITY_STATUS }}"
+
+          if [ "${{ env.SECURITY_STATUS }}" = "PASS" ]; then
+            echo "✅ Security scan passed - application meets security standards"
+          else
+            echo "❌ Security scan failed - immediate attention required"
+            exit 1
+          fi
+
+      - name: 📊 Comment PR with Security Score
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('security-score-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🛡️ Security Scan Results\n\n${report}\n\n---\n*This comment was automatically generated by the security scan workflow.*`
+            });

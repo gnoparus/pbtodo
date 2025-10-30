@@ -1,0 +1,431 @@
+name: 🚀 Deploy to Staging
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_run:
+    workflows: ["🚀 CI Pipeline"]
+    types:
+      - completed
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  STAGING_DOMAIN: ${{ secrets.STAGING_DOMAIN }}
+  STAGING_SERVER: ${{ secrets.STAGING_SERVER }}
+  STAGING_USER: ${{ secrets.STAGING_USER }}
+
+jobs:
+  # Job 1: Deployment Preparation
+  prepare-deployment:
+    name: 📋 Deployment Preparation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+
+    outputs:
+      build-artifact: ${{ steps.artifact.outputs.name }}
+      deployment-id: ${{ steps.meta.outputs.deployment-id }}
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔨 Build Application
+        run: npm run build
+        env:
+          VITE_POCKETBASE_URL: ${{ secrets.STAGING_POCKETBASE_URL }}
+          VITE_HTTPS_ENABLED: true
+          VITE_DEV_MODE: false
+          VITE_ENABLE_SECURITY_HEADERS: true
+          VITE_ENABLE_CSP: true
+          VITE_ENABLE_HSTS: true
+
+      - name: 📦 Package Build Artifacts
+        run: |
+          mkdir -p deployment-package
+          cp -r frontend/dist deployment-package/
+          cp -r infrastructure deployment-package/
+          cp package.json deployment-package/
+
+          # Create deployment manifest
+          cat > deployment-package/manifest.json << EOF
+          {
+            "version": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "commit": "${{ github.sha }}",
+            "built_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "environment": "staging",
+            "domain": "${{ env.STAGING_DOMAIN }}"
+          }
+          EOF
+
+          tar -czf staging-deployment-${{ github.sha }}.tar.gz -C deployment-package .
+
+          echo "📦 Deployment package created: staging-deployment-${{ github.sha }}.tar.gz"
+          echo "📊 Package size: $(du -sh staging-deployment-${{ github.sha }}.tar.gz | cut -f1)"
+
+      - name: 📋 Create Deployment Metadata
+        id: meta
+        run: |
+          deployment_id="staging-${{ github.sha }}-$(date +%s)"
+          echo "deployment-id=$deployment_id" >> $GITHUB_OUTPUT
+
+          echo "🏷️ Deployment ID: $deployment_id"
+
+          # Create deployment info
+          cat > deployment-info.json << EOF
+          {
+            "id": "$deployment_id",
+            "version": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "environment": "staging",
+            "domain": "${{ env.STAGING_DOMAIN }}",
+            "created_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "triggered_by": "${{ github.actor }}",
+            "commit_url": "${{ github.event.repository.html_url }}/commit/${{ github.sha }}"
+          }
+          EOF
+
+          echo "📋 Deployment info created"
+
+      - name: 📦 Upload Deployment Artifacts
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-deployment-${{ github.sha }}
+          path: |
+            staging-deployment-${{ github.sha }}.tar.gz
+            deployment-info.json
+          retention-days: 30
+
+  # Job 2: Security Validation
+  security-validation:
+    name: 🔐 Security Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: prepare-deployment
+
+    steps:
+      - name: 📥 Download Deployment Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.prepare-deployment.outputs.build-artifact }}
+
+      - name: 📦 Extract Deployment Package
+        run: |
+          tar -xzf staging-deployment-${{ github.sha }}.tar.gz
+          ls -la
+
+      - name: 🔍 Security Configuration Validation
+        run: |
+          echo "🔍 Validating security configuration..."
+
+          # Check environment configuration
+          if [ -f "dist/config/environment.js" ]; then
+            node -e "
+            try {
+              const { config, validateConfig, getSecurityHeaders } = require('./dist/config/environment.js');
+
+              validateConfig();
+              console.log('✅ Configuration validation passed');
+
+              const headers = getSecurityHeaders();
+              console.log('🔒 Security headers:', Object.keys(headers));
+
+              // Check critical security headers
+              const criticalHeaders = ['Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options'];
+              const missingHeaders = criticalHeaders.filter(h => !headers[h]);
+
+              if (missingHeaders.length > 0) {
+                console.error('❌ Missing critical security headers:', missingHeaders);
+                process.exit(1);
+              }
+
+              console.log('✅ All critical security headers present');
+            } catch (error) {
+              console.error('❌ Security validation failed:', error.message);
+              process.exit(1);
+            }
+            "
+          else
+            echo "❌ Environment configuration not found in build"
+            exit 1
+          fi
+
+      - name: 🌐 CSP Policy Validation
+        run: |
+          echo "🌐 Validating CSP policy..."
+
+          # Extract CSP from built HTML
+          if [ -f "dist/index.html" ]; then
+            csp_meta=$(grep -o 'content="[^(meta-content)]*Content-Security-Policy[^"]*"' dist/index.html || echo "")
+
+            if [ -z "$csp_meta" ]; then
+              echo "❌ CSP meta tag not found in HTML"
+              exit 1
+            fi
+
+            echo "✅ CSP meta tag found"
+            echo "🔍 CSP Policy: $csp_meta"
+          else
+            echo "❌ index.html not found"
+            exit 1
+          fi
+
+      - name: 🔍 Build Security Analysis
+        run: |
+          echo "🔍 Analyzing build for security issues..."
+
+          security_issues=0
+
+          # Check for sensitive data in build
+          if grep -r -i "password\\|secret\\|key\\|token" dist/ | grep -v "favicon" | head -10; then
+            echo "⚠️ Potential sensitive data found in build"
+            security_issues=$((security_issues + 1))
+          fi
+
+          # Check for console.log statements
+          console_logs=$(find dist/ -name "*.js" -exec grep -l "console.log" {} \; | wc -l)
+          if [ "$console_logs" -gt 0 ]; then
+            echo "⚠️ Found $console_logs files with console.log statements"
+            security_issues=$((security_issues + 1))
+          fi
+
+          # Check for source maps in production build
+          if find dist/ -name "*.map" | grep -q .; then
+            echo "⚠️ Source maps found in production build"
+            security_issues=$((security_issues + 1))
+          fi
+
+          if [ "$security_issues" -gt 0 ]; then
+            echo "❌ Found $security_issues security issues in build"
+            exit 1
+          fi
+
+          echo "✅ Build security analysis passed"
+
+  # Job 3: Staging Deployment
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [prepare-deployment, security-validation]
+    environment:
+      name: staging
+      url: https://${{ env.STAGING_DOMAIN }}
+
+    steps:
+      - name: 📥 Download Deployment Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.prepare-deployment.outputs.build-artifact }}
+
+      - name: 🔧 Setup SSH for Deployment
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+
+      - name: 🚀 Deploy to Staging Server
+        run: |
+          echo "🚀 Starting deployment to staging server..."
+
+          # Create deployment directory on server
+          ssh -o StrictHostKeyChecking=no ${{ env.STAGING_USER }}@${{ env.STAGING_SERVER }} "
+            set -euo pipefail
+
+            DEPLOY_DIR=\"/var/www/pbtodo-staging/deployments/${{ needs.prepare-deployment.outputs.deployment-id }}\"
+            SHARED_DIR=\"/var/www/pbtodo-staging/shared\"
+            CURRENT_DIR=\"/var/www/pbtodo-staging/current\"
+
+            echo \"📁 Creating deployment directory: \$DEPLOY_DIR\"
+            mkdir -p \$DEPLOY_DIR
+
+            echo \"📁 Ensuring shared directories exist\"
+            mkdir -p \$SHARED_DIR/{logs,uploads,ssl,backups}
+          "
+
+          # Extract and upload deployment package
+          tar -xzf staging-deployment-${{ github.sha }}.tar.gz
+
+          echo "📤 Uploading deployment package..."
+          scp -o StrictHostKeyChecking=no -r dist infrastructure manifest.json ${{ env.STAGING_USER }}@${{ env.STAGING_SERVER }}:/var/www/pbtodo-staging/deployments/${{ needs.prepare-deployment.outputs.deployment-id }}/
+
+          # Run deployment script on server
+          ssh -o StrictHostKeyChecking=no ${{ env.STAGING_USER }}@${{ env.STAGING_SERVER }} "
+            set -euo pipefail
+
+            DEPLOY_DIR=\"/var/www/pbtodo-staging/deployments/${{ needs.prepare-deployment.outputs.deployment-id }}\"
+            SHARED_DIR=\"/var/www/pbtodo-staging/shared\"
+            CURRENT_DIR=\"/var/www/pbtodo-staging/current\"
+
+            echo \"🔧 Setting up application...\"
+            cd \$DEPLOY_DIR
+
+            # Setup infrastructure
+            if [ -d \"infrastructure/scripts\" ]; then
+              echo \"🛠️ Running infrastructure setup...\"
+              cd infrastructure/scripts
+              chmod +x *.sh
+
+              # Run security hardening
+              if [ -f \"secure-pocketbase.sh\" ]; then
+                echo \"🔐 Running PocketBase security hardening...\"
+                ./secure-pocketbase.sh staging
+              fi
+            fi
+
+            echo \"🔗 Creating symbolic links to shared resources...\"
+            ln -sf \$SHARED_DIR/logs \$DEPLOY_DIR/logs
+            ln -sf \$SHARED_DIR/uploads \$DEPLOY_DIR/uploads
+            ln -sf \$SHARED_DIR/ssl \$DEPLOY_DIR/ssl
+
+            # Setup Nginx configuration
+            echo \"⚙️ Configuring Nginx...\"
+            if [ -f \"infrastructure/nginx/nginx.conf\" ]; then
+              sudo cp infrastructure/nginx/nginx.conf /etc/nginx/sites-available/pbtodo-staging
+              sudo ln -sf /etc/nginx/sites-available/pbtodo-staging /etc/nginx/sites-enabled/
+
+              # Generate SSL if needed
+              if [ ! -f \$SHARED_DIR/ssl/pbtodo.crt ]; then
+                echo \"🔐 Generating SSL certificate...\"
+                sudo ./infrastructure/scripts/generate-ssl.sh ${{ env.STAGING_DOMAIN }} \$SHARED_DIR/ssl/
+              fi
+
+              sudo nginx -t && sudo systemctl reload nginx
+              echo \"✅ Nginx configuration updated\"
+            fi
+
+            # Health check
+            echo \"🏥 Running health checks...\"
+            if curl -f http://localhost:8090/api/health > /dev/null 2>&1; then
+              echo \"✅ PocketBase health check passed\"
+            else
+              echo \"⚠️ PocketBase health check failed - attempting restart...\"
+              sudo systemctl restart pocketbase-staging
+              sleep 5
+
+              if curl -f http://localhost:8090/api/health > /dev/null 2>&1; then
+                echo \"✅ PocketBase health check passed after restart\"
+              else
+                echo \"❌ PocketBase health check failed\"
+                exit 1
+              fi
+            fi
+
+            # Switch to new deployment
+            echo \"🔄 Switching to new deployment...\"
+            ln -sfn \$DEPLOY_DIR \$CURRENT_DIR
+
+            # Setup monitoring
+            if [ -f \"infrastructure/scripts/backup-monitor.sh\" ]; then
+              echo \"📊 Setting up monitoring...\"
+              cd infrastructure/scripts
+              nohup ./backup-monitor.sh staging > \$SHARED_DIR/logs/monitor.log 2>&1 &
+            fi
+
+            echo \"✅ Deployment completed successfully\"
+          "
+
+      - name: 🏥 Post-Deployment Health Check
+        run: |
+          echo "🏥 Running post-deployment health checks..."
+
+          # Wait for application to start
+          sleep 30
+
+          # Health check endpoints
+          health_endpoints=(
+            "https://${{ env.STAGING_DOMAIN }}/"
+            "https://${{ env.STAGING_DOMAIN }}/api/health"
+          )
+
+          all_healthy=true
+
+          for endpoint in "${health_endpoints[@]}"; do
+            echo "🔍 Checking: $endpoint"
+
+            if curl -f -s -o /dev/null -w "%{http_code}" "$endpoint" | grep -E "^(200|302)$" > /dev/null; then
+              echo "✅ $endpoint is healthy"
+            else
+              echo "❌ $endpoint is not responding correctly"
+              all_healthy=false
+            fi
+          done
+
+          if [ "$all_healthy" = false ]; then
+            echo "❌ Some health checks failed"
+            exit 1
+          fi
+
+          echo "✅ All health checks passed"
+
+      - name: 📊 Deployment Summary
+        run: |
+          echo "🎉 Staging Deployment Summary:"
+          echo "📋 Deployment ID: ${{ needs.prepare-deployment.outputs.deployment-id }}"
+          echo "🔗 URL: https://${{ env.STAGING_DOMAIN }}"
+          echo "📦 Version: ${{ github.sha }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "👤 Deployed by: ${{ github.actor }}"
+          echo "⏰ Deployed at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+  # Job 4: Deployment Notification
+  notification:
+    name: 📢 Deployment Notification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [prepare-deployment, deploy-staging]
+    if: always()
+
+    steps:
+      - name: 📢 Notify on Success
+        if: needs.deploy-staging.result == 'success'
+        run: |
+          echo "🎉 Staging deployment completed successfully!"
+          echo "🔗 Access the staging environment at: https://${{ env.STAGING_DOMAIN }}"
+          echo "📋 Deployment ID: ${{ needs.prepare-deployment.outputs.deployment-id }}"
+
+      - name: 🚨 Notify on Failure
+        if: needs.deploy-staging.result == 'failure'
+        run: |
+          echo "❌ Staging deployment failed!"
+          echo "🔍 Check the deployment logs for details"
+          echo "📋 Deployment ID: ${{ needs.prepare-deployment.outputs.deployment-id }}"
+          exit 1
+
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = needs.deploy-staging.result === 'success' ? '✅ Success' : '❌ Failed';
+            const statusEmoji = needs.deploy-staging.result === 'success' ? '🎉' : '❌';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Staging Deployment ${status}
+
+              ${statusEmoji} **Status**: ${status}
+
+              📋 **Deployment ID**: ${{ needs.prepare-deployment.outputs.deployment-id }}
+              🔗 **Staging URL**: https://${{ env.STAGING_DOMAIN }}
+              📦 **Version**: ${{ github.sha }}
+              🌿 **Branch**: ${{ github.ref_name }}
+              👤 **Deployed by**: ${{ github.actor }}
+
+              ---
+              *This comment was automatically generated by the staging deployment workflow.*
+              `
+            });

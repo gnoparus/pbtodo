@@ -1,0 +1,252 @@
+{
+  "app": {
+    "name": "pbtodo",
+    "version": "1.0.0",
+    "debug": false,
+    "logLevel": "info",
+    "dataDir": "./pb_data",
+    "publicDir": "./pb_public"
+  },
+  "http": {
+    "enabled": true,
+    "address": "127.0.0.1",
+    "port": 8090,
+    "https": {
+      "enabled": false,
+      "certFile": "",
+      "keyFile": "",
+      "redirectHTTP": true,
+      "minVersion": "1.2",
+      "maxVersion": "1.3"
+    },
+    "compression": {
+      "enabled": true,
+      "level": 6
+    },
+    "request": {
+      "timeout": 30,
+      "maxBodySize": 10485760,
+      "maxHeaderSize": 1048576,
+      "maxFormDataSize": 10485760
+    },
+    "cors": {
+      "enabled": true,
+      "allowedOrigins": [
+        "https://yourdomain.com",
+        "https://app.yourdomain.com",
+        "https://www.yourdomain.com"
+      ],
+      "allowedMethods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "allowedHeaders": [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With"
+      ],
+      "exposedHeaders": [],
+      "allowCredentials": true,
+      "maxAge": 86400
+    },
+    "rateLimit": {
+      "enabled": true,
+      "rules": [
+        {
+          "path": "/api/collections/users/auth-with-password",
+          "maxRequests": 5,
+          "duration": 60,
+          "blockDuration": 900
+        },
+        {
+          "path": "/api/collections/users/records",
+          "maxRequests": 3,
+          "duration": 60,
+          "blockDuration": 1800
+        },
+        {
+          "path": "/api/collections/todos/records",
+          "maxRequests": 100,
+          "duration": 60,
+          "blockDuration": 300
+        }
+      ]
+    },
+    "securityHeaders": {
+      "enabled": true,
+      "xssProtection": "1; mode=block",
+      "contentTypeOptions": "nosniff",
+      "frameOptions": "DENY",
+      "referrerPolicy": "strict-origin-when-cross-origin",
+      "contentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+      "strictTransportSecurity": {
+        "enabled": true,
+        "maxAge": 31536000,
+        "includeSubDomains": true,
+        "preload": true
+      }
+    }
+  },
+  "logs": {
+    "console": {
+      "enabled": true,
+      "level": "info"
+    },
+    "file": {
+      "enabled": true,
+      "path": "./pb_data/logs.txt",
+      "maxSize": 104857600,
+      "maxBackups": 10
+    },
+    "audit": {
+      "enabled": true,
+      "path": "./pb_data/audit.log",
+      "maxSize": 52428800,
+      "maxBackups": 30,
+      "includeRequestBody": false,
+      "excludePaths": [
+        "/api/collections/todos/records"
+      ]
+    }
+  },
+  "encryption": {
+    "enabled": true,
+    "key": "", // Set this via environment variable
+    "algorithm": "aes-256-gcm"
+  },
+  "backup": {
+    "enabled": true,
+    "path": "./backups",
+    "schedule": "0 2 * * *",
+    "retention": {
+      "days": 30,
+      "weeks": 12,
+      "months": 12,
+      "years": 5
+    },
+    "compression": {
+      "enabled": true,
+      "level": 6
+    }
+  },
+  "admin": {
+    "enabled": true,
+    "path": "/_",
+    "requireAuth": true,
+    "allowedIps": [
+      "127.0.0.1",
+      "::1"
+    ],
+    "sessionTimeout": 1800,
+    "maxLoginAttempts": 3,
+    "lockoutDuration": 900
+  },
+  "database": {
+    "maxConnections": 25,
+    "connectionTimeout": 30,
+    "queryTimeout": 30,
+    "vacuum": {
+      "enabled": true,
+      "schedule": "0 3 * * 0"
+    },
+    "optimizations": {
+      "enabled": true,
+      "analyzeThreshold": 1000
+    }
+  },
+  "security": {
+    "passwordPolicy": {
+      "minLength": 12,
+      "requireUppercase": true,
+      "requireLowercase": true,
+      "requireNumbers": true,
+      "requireSymbols": true,
+      "preventReuse": 5,
+      "expiryDays": 90
+    },
+    "session": {
+      "duration": 28800,
+      "refreshThreshold": 3600,
+      "maxSessions": 3,
+      "revokeOnPasswordChange": true,
+      "requireReauth": {
+        "sensitiveActions": true,
+        "threshold": 86400
+      }
+    },
+    "authentication": {
+      "rateLimiting": {
+        "enabled": true,
+        "maxAttempts": 5,
+        "windowMinutes": 15,
+        "lockoutDuration": 1800,
+        "exponentialBackoff": true
+      },
+      "twoFactor": {
+        "enabled": false,
+        "required": false,
+        "issuer": "pbtodo",
+        "backupCodes": {
+          "enabled": false,
+          "count": 10
+        }
+      }
+    },
+    "monitoring": {
+      "enabled": true,
+      "alertThresholds": {
+        "failedLogins": 10,
+        "errorRate": 0.05,
+        "responseTime": 2000
+      },
+      "notifications": {
+        "email": {
+          "enabled": false,
+          "smtp": {
+            "host": "",
+            "port": 587,
+            "username": "",
+            "password": "",
+            "from": ""
+          }
+        },
+        "webhook": {
+          "enabled": false,
+          "url": "",
+          "secret": ""
+        }
+      }
+    }
+  },
+  "performance": {
+    "cache": {
+      "enabled": true,
+      "type": "memory",
+      "ttl": 300,
+      "maxSize": 104857600
+    },
+    "compression": {
+      "enabled": true,
+      "level": 6,
+      "minSize": 1024
+    },
+    "static": {
+      "enabled": true,
+      "cacheControl": "public, max-age=31536000",
+      "etag": true
+    }
+  },
+  "maintenance": {
+    "enabled": true,
+    "schedule": "0 4 * * *",
+    "tasks": {
+      "cleanupLogs": true,
+      "optimizeDatabase": true,
+      "cleanupTempFiles": true,
+      "updateStatistics": true
+    }
+  }
+}

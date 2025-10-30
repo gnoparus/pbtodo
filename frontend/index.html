@@ -2,12 +2,110 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Secure Todo SaaS Application with advanced security features" />
+    <meta name="author" content="pbtodo" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- DNS prefetch for performance -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+
+    <!-- Favicon with proper security -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Todo SaaS</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <!-- Application title -->
+    <title>Todo SaaS - Secure Task Management</title>
+
+    <!-- Security headers will be injected by JavaScript -->
+    <!-- CSP, HSTS, XSS Protection, etc. are added via securityHeaders.ts -->
+
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+
+    <!-- Prevent caching of sensitive pages -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- Content Security Policy placeholder (will be replaced by JavaScript) -->
+    <meta http-equiv="Content-Security-Policy" content="" />
+
+    <!-- Other security headers placeholders (will be replaced by JavaScript) -->
+    <meta http-equiv="X-Frame-Options" content="" />
+    <meta http-equiv="X-Content-Type-Options" content="" />
+    <meta http-equiv="X-XSS-Protection" content="" />
+    <meta http-equiv="Referrer-Policy" content="" />
+    <meta http-equiv="Permissions-Policy" content="" />
+    <meta http-equiv="Strict-Transport-Security" content="" />
   </head>
   <body>
+    <!-- Loading indicator for better UX -->
+    <div id="loading" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      z-index: 9999;
+    ">
+      <div style="text-align: center;">
+        <div style="
+          width: 40px;
+          height: 40px;
+          border: 3px solid #e9ecef;
+          border-top: 3px solid #007bff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        "></div>
+        <p style="color: #6c757d; margin: 0;">Loading...</p>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+
+    <!-- Main application root -->
     <div id="root"></div>
+
+    <!-- Main application script with security considerations -->
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Remove loading indicator once app loads -->
+    <script>
+      window.addEventListener('load', function() {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.opacity = '0';
+          loading.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => loading.remove(), 300);
+        }
+      });
+
+      // Fallback: remove loading after 10 seconds even if app doesn't load
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          console.warn('Loading indicator removed due to timeout');
+          loading.remove();
+        }
+      }, 10000);
+    </script>
   </body>
 </html>

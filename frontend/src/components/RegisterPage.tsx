@@ -1,6 +1,7 @@
 import React, { useState, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { validatePassword, getPasswordStrengthData } from '../utils/validation'
 
 const RegisterPage: React.FC = () => {
   const [name, setName] = useState('')
@@ -8,7 +9,9 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({})
-  const { register, loading, error, clearError } = useAuth()
+  const [passwordStrength, setPasswordStrength] = useState({ color: 'red', text: 'Weak', width: '25%' })
+  const [passwordFeedback, setPasswordFeedback] = useState<string[]>([])
+  const { register, loading, error, clearError, rateLimitStatus } = useAuth()
 
   const validateForm = (): boolean => {
     const newErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {}
@@ -29,8 +32,11 @@ const RegisterPage: React.FC = () => {
 
     if (!password) {
       newErrors.password = 'Password is required'
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else {
+      const passwordValidation = validatePassword(password)
+      if (!passwordValidation.isValid) {
+        newErrors.password = passwordValidation.errors.join(', ')
+      }
     }
 
     if (!confirmPassword) {
@@ -41,6 +47,21 @@ const RegisterPage: React.FC = () => {
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  // Update password strength indicator
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value
+    setPassword(newPassword)
+
+    if (newPassword) {
+      const validation = validatePassword(newPassword)
+      setPasswordStrength(getPasswordStrengthData(validation.strength))
+      setPasswordFeedback(validation.feedback)
+    } else {
+      setPasswordStrength({ color: 'red', text: 'Weak', width: '25%' })
+      setPasswordFeedback([])
+    }
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -56,6 +77,28 @@ const RegisterPage: React.FC = () => {
     } catch (err) {
       // Error is handled by the auth context
     }
+  }
+
+  // Check if registration is rate limited
+  if (rateLimitStatus.registrationBlocked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Registration Temporarily Blocked
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  Too many registration attempts. Please try again later.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -179,15 +222,7 @@ const RegisterPage: React.FC = () => {
                   className={`input ${errors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Create a password"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value)
-                    if (errors.password) {
-                      setErrors(prev => ({ ...prev, password: undefined }))
-                    }
-                    if (errors.confirmPassword && confirmPassword) {
-                      setErrors(prev => ({ ...prev, confirmPassword: undefined }))
-                    }
-                  }}
+                  onChange={handlePasswordChange}
                   onBlur={() => {
                     if (password && password.length < 6) {
                       setErrors(prev => ({ ...prev, password: 'Password must be at least 6 characters' }))
@@ -200,6 +235,46 @@ const RegisterPage: React.FC = () => {
                   <p id="password-error" className="mt-1 text-sm text-red-600">
                     {errors.password}
                   </p>
+                )}
+
+                {/* Password Strength Indicator */}
+                {password && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-600">Password Strength</span>
+                      <span className={`text-xs font-medium ${
+                        passwordStrength.color === 'red' ? 'text-red-600' :
+                        passwordStrength.color === 'orange' ? 'text-orange-600' :
+                        passwordStrength.color === 'yellow' ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {passwordStrength.text}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          passwordStrength.color === 'red' ? 'bg-red-500' :
+                          passwordStrength.color === 'orange' ? 'bg-orange-500' :
+                          passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}
+                        style={{ width: passwordStrength.width }}
+                      />
+                    </div>
+                    {passwordFeedback.length > 0 && (
+                      <ul className="mt-1 text-xs text-gray-600 space-y-1">
+                        {passwordFeedback.map((feedback, index) => (
+                          <li key={index} className="flex items-center">
+                            <svg className="w-3 h-3 mr-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            {feedback}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
               </div>
 
