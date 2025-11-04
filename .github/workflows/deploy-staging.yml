@@ -10,7 +10,7 @@ on:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   STAGING_DOMAIN: ${{ secrets.STAGING_DOMAIN }}
   STAGING_SERVER: ${{ secrets.STAGING_SERVER }}
   STAGING_USER: ${{ secrets.STAGING_USER }}

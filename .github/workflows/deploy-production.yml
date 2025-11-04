@@ -20,7 +20,7 @@ on:
         required: true
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   PRODUCTION_DOMAIN: ${{ secrets.PRODUCTION_DOMAIN }}
   PRODUCTION_SERVER: ${{ secrets.PRODUCTION_SERVER }}
   PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
