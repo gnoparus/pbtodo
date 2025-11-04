@@ -73,7 +73,7 @@ function buildCSP(config: SecurityHeaderConfig): string {
   directives.push("img-src 'self' data: https: blob:")
 
   // Connect sources (API endpoints)
-  const connectSrc = ["connect-src 'self'"]
+  const connectSrc = ["connect-src 'self'", 'https://pbtodo-api.bua.workers.dev']
   if (config.cspReportUri) {
     connectSrc.push(config.cspReportUri)
   }
