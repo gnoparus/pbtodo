@@ -42,7 +42,7 @@ interface AuthResponse {
  */
 class ApiClient {
   private token: string | null = null;
-  private tokenExpiryCheck: number | null = null;
+
 
   constructor() {
     // Load token from localStorage on initialization
@@ -56,9 +56,9 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     // Add Authorization header if token exists
@@ -230,7 +230,7 @@ class ApiClient {
     /**
      * Request password reset (placeholder)
      */
-    requestPasswordReset: async (email: string): Promise<void> => {
+    requestPasswordReset: async (_email: string): Promise<void> => {
       // Not implemented in Workers yet, placeholder for compatibility
       console.warn('Password reset not implemented yet');
       await Promise.resolve();
@@ -240,9 +240,9 @@ class ApiClient {
      * Reset password (placeholder)
      */
     resetPassword: async (
-      token: string,
-      password: string,
-      passwordConfirm: string
+      _token: string,
+      _password: string,
+      _passwordConfirm: string
     ): Promise<void> => {
       // Not implemented in Workers yet, placeholder for compatibility
       console.warn('Password reset not implemented yet');

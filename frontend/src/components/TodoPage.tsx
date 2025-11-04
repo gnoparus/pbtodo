@@ -8,7 +8,7 @@ interface TodoFilters {
   searchTerm: string
 }
 
-type SortField = 'created' | 'updated' | 'priority' | 'title'
+type SortField = 'created_at' | 'updated_at' | 'priority' | 'title'
 type SortDirection = 'asc' | 'desc'
 
 const TodoPage: React.FC = () => {
@@ -24,7 +24,7 @@ const TodoPage: React.FC = () => {
     priority: 'all',
     searchTerm: ''
   })
-  const [sortField, setSortField] = useState<SortField>('created')
+  const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
@@ -386,10 +386,10 @@ const TodoPage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Sort</label>
             <div className="space-y-1">
               <button
-                onClick={() => handleSort('created')}
-                className={`w-full text-left px-2 py-1 text-sm rounded hover:bg-gray-100 ${sortField === 'created' ? 'bg-gray-200' : ''}`}
+                onClick={() => handleSort('created_at')}
+                className={`w-full text-left px-2 py-1 text-sm rounded hover:bg-gray-100 ${sortField === 'created_at' ? 'bg-gray-200' : ''}`}
               >
-                Created {getSortIcon('created')}
+                Created {getSortIcon('created_at')}
               </button>
               <button
                 onClick={() => handleSort('priority')}
@@ -642,11 +642,11 @@ const TodoPage: React.FC = () => {
                             {todo.priority}
                           </span>
                           <span className="text-xs text-gray-500">
-                            Created {new Date(todo.created).toLocaleDateString()}
+                            Created {new Date(todo.created_at).toLocaleDateString()}
                           </span>
                           {todo.completed && (
                             <span className="text-xs text-gray-500">
-                              • Completed {new Date(todo.updated).toLocaleDateString()}
+                              • Completed {new Date(todo.updated_at).toLocaleDateString()}
                             </span>
                           )}
                         </div>
