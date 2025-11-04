@@ -14,14 +14,14 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^3.11.7"
+    "hono": "^4.10.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231218.0",
-    "@types/node": "^20.10.6",
-    "typescript": "^5.3.3",
-    "vitest": "^1.1.0",
-    "wrangler": "^3.22.1"
+    "@cloudflare/workers-types": "^4.20250104.0",
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2",
+    "vitest": "^1.6.0",
+    "wrangler": "^4.45.3"
   },
   "engines": {
     "node": ">=18.0.0"
