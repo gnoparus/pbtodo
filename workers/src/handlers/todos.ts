@@ -67,7 +67,7 @@ function rowToTodo(row: any): Todo {
  * GET /api/todos
  */
 export async function handleGetTodos(
-  request: Request,
+  _request: Request,
   env: Env,
   userId: string,
 ): Promise<Response> {
@@ -93,7 +93,7 @@ export async function handleGetTodos(
  * GET /api/todos/:id
  */
 export async function handleGetTodoById(
-  request: Request,
+  _request: Request,
   env: Env,
   userId: string,
   todoId: string,
@@ -320,7 +320,7 @@ export async function handleUpdateTodo(
  * DELETE /api/todos/:id
  */
 export async function handleDeleteTodo(
-  request: Request,
+  _request: Request,
   env: Env,
   userId: string,
   todoId: string,
@@ -359,7 +359,7 @@ export async function handleDeleteTodo(
  * PATCH /api/todos/:id/toggle
  */
 export async function handleToggleTodo(
-  request: Request,
+  _request: Request,
   env: Env,
   userId: string,
   todoId: string,

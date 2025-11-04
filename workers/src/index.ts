@@ -298,7 +298,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    ctx: ExecutionContext,
+    _ctx: ExecutionContext,
   ): Promise<Response> {
     try {
       // Handle CORS preflight requests

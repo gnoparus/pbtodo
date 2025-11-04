@@ -6,7 +6,7 @@
 const SALT_LENGTH = 16;
 const ITERATIONS = 100000;
 const KEY_LENGTH = 32;
-const HASH_ALGORITHM = 'SHA-256';
+const HASH_ALGORITHM = "SHA-256";
 
 /**
  * Generate a random salt
@@ -20,8 +20,8 @@ function generateSalt(): Uint8Array {
  */
 function toHex(buffer: Uint8Array): string {
   return Array.from(buffer)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /**
@@ -40,30 +40,30 @@ function fromHex(hex: string): Uint8Array {
  */
 async function deriveKey(
   password: string,
-  salt: Uint8Array
+  salt: Uint8Array,
 ): Promise<Uint8Array> {
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password);
 
   // Import password as key material
   const keyMaterial = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     passwordBuffer,
-    'PBKDF2',
+    "PBKDF2",
     false,
-    ['deriveBits']
+    ["deriveBits"],
   );
 
   // Derive bits using PBKDF2
   const derivedBits = await crypto.subtle.deriveBits(
     {
-      name: 'PBKDF2',
+      name: "PBKDF2",
       salt: salt,
       iterations: ITERATIONS,
       hash: HASH_ALGORITHM,
     },
     keyMaterial,
-    KEY_LENGTH * 8
+    KEY_LENGTH * 8,
   );
 
   return new Uint8Array(derivedBits);
@@ -85,15 +85,15 @@ export async function hashPassword(password: string): Promise<string> {
  */
 export async function verifyPassword(
   password: string,
-  storedHash: string
+  storedHash: string,
 ): Promise<boolean> {
   try {
-    const parts = storedHash.split('$');
+    const parts = storedHash.split("$");
     if (parts.length !== 3) {
       return false;
     }
 
-    const iterations = parseInt(parts[0], 10);
+    const _iterations = parseInt(parts[0], 10);
     const salt = fromHex(parts[1]);
     const hash = fromHex(parts[2]);
 
@@ -112,7 +112,7 @@ export async function verifyPassword(
 
     return mismatch === 0;
   } catch (error) {
-    console.error('Password verification error:', error);
+    console.error("Password verification error:", error);
     return false;
   }
 }
@@ -138,7 +138,7 @@ export function generateUUID(): string {
 export async function sha256(data: string): Promise<string> {
   const encoder = new TextEncoder();
   const buffer = encoder.encode(data);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
   return toHex(new Uint8Array(hashBuffer));
 }
 
