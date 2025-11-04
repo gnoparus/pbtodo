@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { api, User } from '../services/pocketbase'
+import { api, User } from '../services/api'
 import { validatePassword, validateEmail, validateName } from '../utils/validation'
 import { getAuthRateLimiter, getRegistrationRateLimiter, formatTimeRemaining } from '../utils/rateLimiting'
 
@@ -94,8 +94,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (currentUser) {
             setUser(currentUser)
           } else {
-            // Try to refresh the session
-            await refreshAuth()
+            // Token exists but invalid, clear it
+            api.auth.logout()
           }
         }
       } catch (err) {
@@ -139,16 +139,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      await api.auth.login(email, password)
-      const currentUser = api.auth.getCurrentUser()
-      if (currentUser) {
-        setUser(currentUser)
-        // Reset rate limiter on successful login
-        authLimiter.recordAttempt(true)
-      } else {
-        // Record failed attempt
-        authLimiter.recordAttempt(false)
-      }
+      const response = await api.auth.login(email, password)
+      setUser(response.user)
+      // Reset rate limiter on successful login
+      authLimiter.recordAttempt(true)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed'
       setError(message)
@@ -198,11 +192,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      await api.auth.register(email, password, name)
+      const response = await api.auth.register(email, password, name)
       // Record successful registration
       registrationLimiter.recordAttempt(true)
-      // After successful registration, log the user in
-      await login(email, password)
+      // User is automatically logged in after registration
+      setUser(response.user)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed'
       setError(message)
@@ -225,11 +219,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true)
     setError(null)
     try {
-      await api.auth.refresh()
-      const currentUser = api.auth.getCurrentUser()
-      if (currentUser) {
-        setUser(currentUser)
-      }
+      const response = await api.auth.refresh()
+      setUser(response.user)
     } catch (err) {
       console.error('Token refresh failed:', err)
       const message = err instanceof Error ? err.message : 'Session expired'

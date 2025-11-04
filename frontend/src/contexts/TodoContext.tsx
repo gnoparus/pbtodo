@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { api, Todo } from '../services/pocketbase'
+import { api, Todo } from '../services/api'
 
 interface TodoContextType {
   todos: Todo[]
