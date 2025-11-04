@@ -67,5 +67,5 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://pbtodo.pa
 ENVIRONMENT = "development"
 
 [env.production.vars]
-ALLOWED_ORIGINS = "https://pbtodo-frontend.pages.dev,https://1b7b007a.pbtodo-frontend.pages.dev,https://feature-cloudflare-serverles.pbtodo-frontend.pages.dev"
+ALLOWED_ORIGINS = "https://pbtodo-frontend.pages.dev,https://8141e11b.pbtodo-frontend.pages.dev,https://35c06048.pbtodo-frontend.pages.dev,https://33e334ef.pbtodo-frontend.pages.dev,https://c0ab88d7.pbtodo-frontend.pages.dev,https://1b7b007a.pbtodo-frontend.pages.dev,https://master.pbtodo-frontend.pages.dev"
 ENVIRONMENT = "production"
