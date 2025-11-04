@@ -1,0 +1,69 @@
+name = "pbtodo-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+node_compat = true
+
+# Development environment
+[env.development]
+name = "pbtodo-api-dev"
+vars = { ENVIRONMENT = "development" }
+
+# Production environment
+[env.production]
+name = "pbtodo-api"
+vars = { ENVIRONMENT = "production" }
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "pbtodo-db"
+database_id = "placeholder-d1-id"  # Replace with actual D1 database ID after creation
+
+# D1 Database binding for production
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "pbtodo-db"
+database_id = "placeholder-d1-id"  # Replace with actual D1 database ID
+
+# KV namespace for sessions
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "placeholder-sessions-kv-id"  # Replace with actual KV namespace ID
+preview_id = "placeholder-sessions-preview-id"
+
+# KV namespace for rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "placeholder-rate-limits-kv-id"  # Replace with actual KV namespace ID
+preview_id = "placeholder-rate-limits-preview-id"
+
+# Production KV namespaces
+[[env.production.kv_namespaces]]
+binding = "SESSIONS"
+id = "placeholder-sessions-kv-id-prod"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "placeholder-rate-limits-kv-id-prod"
+
+# R2 bucket for assets (optional)
+# [[r2_buckets]]
+# binding = "ASSETS"
+# bucket_name = "pbtodo-assets"
+# preview_bucket_name = "pbtodo-assets-preview"
+
+# Secrets (set via: wrangler secret put <NAME>)
+# - JWT_SECRET: Secret key for JWT token signing
+# - ENCRYPTION_KEY: Key for encrypting sensitive data
+
+# Production routes (configure after domain setup)
+# [[env.production.routes]]
+# pattern = "api.yourdomain.com/*"
+# zone_name = "yourdomain.com"
+
+# CORS origins (configure as needed)
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://pbtodo.pages.dev"
+
+[env.production.vars]
+ALLOWED_ORIGINS = "https://pbtodo.pages.dev,https://yourdomain.com"
