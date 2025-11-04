@@ -93,7 +93,7 @@ export async function verifyPassword(
       return false;
     }
 
-    const _iterations = parseInt(parts[0], 10);
+    // Extract salt and hash (iterations are stored but not used for verification)
     const salt = fromHex(parts[1]);
     const hash = fromHex(parts[2]);
 
