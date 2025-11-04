@@ -1,7 +1,7 @@
 name = "pbtodo-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 # Development environment
 [env.development]
@@ -11,40 +11,39 @@ vars = { ENVIRONMENT = "development" }
 # Production environment
 [env.production]
 name = "pbtodo-api"
-vars = { ENVIRONMENT = "production" }
 
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "pbtodo-db"
-database_id = "placeholder-d1-id"  # Replace with actual D1 database ID after creation
+database_id = "e3a9f258-138e-4270-84c9-d0d720594105"
 
 # D1 Database binding for production
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "pbtodo-db"
-database_id = "placeholder-d1-id"  # Replace with actual D1 database ID
+database_id = "e3a9f258-138e-4270-84c9-d0d720594105"
 
 # KV namespace for sessions
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "placeholder-sessions-kv-id"  # Replace with actual KV namespace ID
-preview_id = "placeholder-sessions-preview-id"
+id = "be366149c15e4007be460e67e8ab538f"
+preview_id = "c210c38528164e50a58af2a05fb0b802"
 
 # KV namespace for rate limiting
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "placeholder-rate-limits-kv-id"  # Replace with actual KV namespace ID
-preview_id = "placeholder-rate-limits-preview-id"
+id = "f115bf7d6b584fc7aee5ef4df507c1a9"
+preview_id = "bd1e8e65b7ad417c8102dccce54cc1ff"
 
 # Production KV namespaces
 [[env.production.kv_namespaces]]
 binding = "SESSIONS"
-id = "placeholder-sessions-kv-id-prod"
+id = "be366149c15e4007be460e67e8ab538f"
 
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "placeholder-rate-limits-kv-id-prod"
+id = "f115bf7d6b584fc7aee5ef4df507c1a9"
 
 # R2 bucket for assets (optional)
 # [[r2_buckets]]
@@ -64,6 +63,8 @@ id = "placeholder-rate-limits-kv-id-prod"
 # CORS origins (configure as needed)
 [vars]
 ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://pbtodo.pages.dev"
+ENVIRONMENT = "development"
 
 [env.production.vars]
 ALLOWED_ORIGINS = "https://pbtodo.pages.dev,https://yourdomain.com"
+ENVIRONMENT = "production"
