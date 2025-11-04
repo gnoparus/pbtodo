@@ -9,6 +9,10 @@ account_id = "bd0be892230887868128605a67e30488"
 name = "pbtodo-api-dev"
 vars = { ENVIRONMENT = "development" }
 
+# Staging environment
+[env.staging]
+name = "pbtodo-api-staging"
+
 # Production environment
 [env.production]
 name = "pbtodo-api"
@@ -18,6 +22,12 @@ name = "pbtodo-api"
 binding = "DB"
 database_name = "pbtodo-db"
 database_id = "e3a9f258-138e-4270-84c9-d0d720594105"
+
+# D1 Database binding for staging
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "pbtodo-db-staging"
+database_id = "STAGING_DB_ID_HERE"  # Create staging DB with: wrangler d1 create pbtodo-db-staging
 
 # D1 Database binding for production
 [[env.production.d1_databases]]
@@ -36,6 +46,15 @@ preview_id = "c210c38528164e50a58af2a05fb0b802"
 binding = "RATE_LIMITS"
 id = "f115bf7d6b584fc7aee5ef4df507c1a9"
 preview_id = "bd1e8e65b7ad417c8102dccce54cc1ff"
+
+# Staging KV namespaces
+[[env.staging.kv_namespaces]]
+binding = "SESSIONS"
+id = "STAGING_SESSIONS_KV_ID_HERE"  # Create with: wrangler kv:namespace create "SESSIONS" --env staging
+
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "STAGING_RATE_LIMITS_KV_ID_HERE"  # Create with: wrangler kv:namespace create "RATE_LIMITS" --env staging
 
 # Production KV namespaces
 [[env.production.kv_namespaces]]
@@ -65,6 +84,10 @@ id = "f115bf7d6b584fc7aee5ef4df507c1a9"
 [vars]
 ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://pbtodo.pages.dev"
 ENVIRONMENT = "development"
+
+[env.staging.vars]
+ALLOWED_ORIGINS = "https://staging.pbtodo-frontend.pages.dev,https://develop.pbtodo-frontend.pages.dev,http://localhost:5173"
+ENVIRONMENT = "staging"
 
 [env.production.vars]
 ALLOWED_ORIGINS = "https://pbtodo-frontend.pages.dev,https://8141e11b.pbtodo-frontend.pages.dev,https://35c06048.pbtodo-frontend.pages.dev,https://33e334ef.pbtodo-frontend.pages.dev,https://c0ab88d7.pbtodo-frontend.pages.dev,https://1b7b007a.pbtodo-frontend.pages.dev,https://master.pbtodo-frontend.pages.dev"
