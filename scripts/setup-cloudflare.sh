@@ -109,25 +109,25 @@ echo ""
 # Sessions KV
 SESSIONS_NAME="pbtodo-sessions"
 echo "Creating KV namespace: $SESSIONS_NAME"
-SESSIONS_OUTPUT=$(wrangler kv:namespace create "$SESSIONS_NAME" 2>&1)
+SESSIONS_OUTPUT=$(wrangler kv namespace create "$SESSIONS_NAME" 2>&1)
 SESSIONS_ID=$(echo "$SESSIONS_OUTPUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}')
 
 if [ -z "$SESSIONS_ID" ]; then
     echo -e "${YELLOW}⚠️  Sessions KV may already exist or creation failed${NC}"
     # Try to list and find it
-    SESSIONS_ID=$(wrangler kv:namespace list 2>/dev/null | grep "$SESSIONS_NAME" | grep -oE '[a-f0-9]{32}' | head -1)
+    SESSIONS_ID=$(wrangler kv namespace list 2>/dev/null | grep "$SESSIONS_NAME" | grep -oE '[a-f0-9]{32}' | head -1)
 fi
 
 echo -e "${GREEN}✓ Sessions KV: $SESSIONS_ID${NC}"
 
 # Sessions KV Preview
 echo "Creating KV namespace: ${SESSIONS_NAME}-preview"
-SESSIONS_PREVIEW_OUTPUT=$(wrangler kv:namespace create "${SESSIONS_NAME}-preview" 2>&1)
+SESSIONS_PREVIEW_OUTPUT=$(wrangler kv namespace create "${SESSIONS_NAME}-preview" 2>&1)
 SESSIONS_PREVIEW_ID=$(echo "$SESSIONS_PREVIEW_OUTPUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}')
 
 if [ -z "$SESSIONS_PREVIEW_ID" ]; then
     echo -e "${YELLOW}⚠️  Sessions Preview KV may already exist${NC}"
-    SESSIONS_PREVIEW_ID=$(wrangler kv:namespace list 2>/dev/null | grep "${SESSIONS_NAME}-preview" | grep -oE '[a-f0-9]{32}' | head -1)
+    SESSIONS_PREVIEW_ID=$(wrangler kv namespace list 2>/dev/null | grep "${SESSIONS_NAME}-preview" | grep -oE '[a-f0-9]{32}' | head -1)
 fi
 
 echo -e "${GREEN}✓ Sessions Preview KV: $SESSIONS_PREVIEW_ID${NC}"
@@ -136,24 +136,24 @@ echo ""
 # Rate Limits KV
 RATE_LIMITS_NAME="pbtodo-rate-limits"
 echo "Creating KV namespace: $RATE_LIMITS_NAME"
-RATE_LIMITS_OUTPUT=$(wrangler kv:namespace create "$RATE_LIMITS_NAME" 2>&1)
+RATE_LIMITS_OUTPUT=$(wrangler kv namespace create "$RATE_LIMITS_NAME" 2>&1)
 RATE_LIMITS_ID=$(echo "$RATE_LIMITS_OUTPUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}')
 
 if [ -z "$RATE_LIMITS_ID" ]; then
     echo -e "${YELLOW}⚠️  Rate Limits KV may already exist${NC}"
-    RATE_LIMITS_ID=$(wrangler kv:namespace list 2>/dev/null | grep "$RATE_LIMITS_NAME" | grep -oE '[a-f0-9]{32}' | head -1)
+    RATE_LIMITS_ID=$(wrangler kv namespace list 2>/dev/null | grep "$RATE_LIMITS_NAME" | grep -oE '[a-f0-9]{32}' | head -1)
 fi
 
 echo -e "${GREEN}✓ Rate Limits KV: $RATE_LIMITS_ID${NC}"
 
 # Rate Limits KV Preview
 echo "Creating KV namespace: ${RATE_LIMITS_NAME}-preview"
-RATE_LIMITS_PREVIEW_OUTPUT=$(wrangler kv:namespace create "${RATE_LIMITS_NAME}-preview" 2>&1)
+RATE_LIMITS_PREVIEW_OUTPUT=$(wrangler kv namespace create "${RATE_LIMITS_NAME}-preview" 2>&1)
 RATE_LIMITS_PREVIEW_ID=$(echo "$RATE_LIMITS_PREVIEW_OUTPUT" | grep -oE 'id = "[a-f0-9]{32}"' | grep -oE '[a-f0-9]{32}')
 
 if [ -z "$RATE_LIMITS_PREVIEW_ID" ]; then
     echo -e "${YELLOW}⚠️  Rate Limits Preview KV may already exist${NC}"
-    RATE_LIMITS_PREVIEW_ID=$(wrangler kv:namespace list 2>/dev/null | grep "${RATE_LIMITS_NAME}-preview" | grep -oE '[a-f0-9]{32}' | head -1)
+    RATE_LIMITS_PREVIEW_ID=$(wrangler kv namespace list 2>/dev/null | grep "${RATE_LIMITS_NAME}-preview" | grep -oE '[a-f0-9]{32}' | head -1)
 fi
 
 echo -e "${GREEN}✓ Rate Limits Preview KV: $RATE_LIMITS_PREVIEW_ID${NC}"
