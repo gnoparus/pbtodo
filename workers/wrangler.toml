@@ -2,6 +2,7 @@ name = "pbtodo-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
+account_id = "bd0be892230887868128605a67e30488"
 
 # Development environment
 [env.development]
@@ -66,5 +67,5 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://pbtodo.pa
 ENVIRONMENT = "development"
 
 [env.production.vars]
-ALLOWED_ORIGINS = "https://pbtodo.pages.dev,https://yourdomain.com"
+ALLOWED_ORIGINS = "https://pbtodo-frontend.pages.dev,https://1b7b007a.pbtodo-frontend.pages.dev,https://feature-cloudflare-serverles.pbtodo-frontend.pages.dev"
 ENVIRONMENT = "production"
