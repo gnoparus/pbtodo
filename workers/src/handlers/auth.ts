@@ -385,7 +385,7 @@ export async function handleRefresh(
       console.log("Refresh - KV PUT successful");
     } catch (kvError) {
       console.error("Refresh - KV PUT error:", kvError);
-      console.error("Refresh - Failed with expiration:", expirationTimestamp);
+      console.error("Refresh - Failed with expiration:", kvExpiration);
       throw kvError;
     }
 

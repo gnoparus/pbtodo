@@ -3,7 +3,7 @@
  * Implements create, read, update, delete operations for todos
  */
 
-import type { Env, Todo, CreateTodoInput, UpdateTodoInput } from '../types';
+import type { Env, Todo, CreateTodoInput, UpdateTodoInput } from "../types";
 import {
   validateTodoTitle,
   validateTodoDescription,
@@ -11,8 +11,8 @@ import {
   parseAndValidateJSON,
   validateRequiredFields,
   isValidUUID,
-} from '../utils/validation';
-import { generateUUID } from '../utils/crypto';
+} from "../utils/validation";
+import { generateUUID } from "../utils/crypto";
 
 /**
  * Success response helper
@@ -25,8 +25,8 @@ function successResponse(data: any, status: number = 200): Response {
     }),
     {
       status,
-      headers: { 'Content-Type': 'application/json' },
-    }
+      headers: { "Content-Type": "application/json" },
+    },
   );
 }
 
@@ -41,8 +41,8 @@ function errorResponse(error: string, status: number = 400): Response {
     }),
     {
       status,
-      headers: { 'Content-Type': 'application/json' },
-    }
+      headers: { "Content-Type": "application/json" },
+    },
   );
 }
 
@@ -55,7 +55,7 @@ function rowToTodo(row: any): Todo {
     title: row.title as string,
     description: row.description as string | undefined,
     completed: Boolean(row.completed),
-    priority: row.priority as 'low' | 'medium' | 'high',
+    priority: row.priority as "low" | "medium" | "high",
     user_id: row.user_id as string,
     created_at: row.created_at as number,
     updated_at: row.updated_at as number,
@@ -69,12 +69,12 @@ function rowToTodo(row: any): Todo {
 export async function handleGetTodos(
   request: Request,
   env: Env,
-  userId: string
+  userId: string,
 ): Promise<Response> {
   try {
     // Get all todos for user, ordered by created_at desc
     const { results } = await env.DB.prepare(
-      'SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE user_id = ? ORDER BY created_at DESC'
+      "SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE user_id = ? ORDER BY created_at DESC",
     )
       .bind(userId)
       .all();
@@ -83,8 +83,8 @@ export async function handleGetTodos(
 
     return successResponse(todos, 200);
   } catch (error) {
-    console.error('Get todos error:', error);
-    return errorResponse('Failed to fetch todos', 500);
+    console.error("Get todos error:", error);
+    return errorResponse("Failed to fetch todos", 500);
   }
 }
 
@@ -96,29 +96,29 @@ export async function handleGetTodoById(
   request: Request,
   env: Env,
   userId: string,
-  todoId: string
+  todoId: string,
 ): Promise<Response> {
   try {
     // Validate UUID format
     if (!isValidUUID(todoId)) {
-      return errorResponse('Invalid todo ID format', 400);
+      return errorResponse("Invalid todo ID format", 400);
     }
 
     // Get todo from database
     const todo = await env.DB.prepare(
-      'SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ? AND user_id = ?'
+      "SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ? AND user_id = ?",
     )
       .bind(todoId, userId)
       .first();
 
     if (!todo) {
-      return errorResponse('Todo not found', 404);
+      return errorResponse("Todo not found", 404);
     }
 
     return successResponse(rowToTodo(todo), 200);
   } catch (error) {
-    console.error('Get todo by ID error:', error);
-    return errorResponse('Failed to fetch todo', 500);
+    console.error("Get todo by ID error:", error);
+    return errorResponse("Failed to fetch todo", 500);
   }
 }
 
@@ -129,16 +129,19 @@ export async function handleGetTodoById(
 export async function handleCreateTodo(
   request: Request,
   env: Env,
-  userId: string
+  userId: string,
 ): Promise<Response> {
   try {
     // Parse and validate JSON body
     const body = await parseAndValidateJSON(request);
 
     // Validate required fields
-    const requiredValidation = validateRequiredFields(body, ['title', 'priority']);
+    const requiredValidation = validateRequiredFields(body, [
+      "title",
+      "priority",
+    ]);
     if (!requiredValidation.isValid) {
-      return errorResponse(requiredValidation.errors.join(', '), 400);
+      return errorResponse(requiredValidation.errors.join(", "), 400);
     }
 
     const { title, description, priority, completed } = body as CreateTodoInput;
@@ -146,21 +149,21 @@ export async function handleCreateTodo(
     // Validate title
     const titleValidation = validateTodoTitle(title);
     if (!titleValidation.isValid) {
-      return errorResponse(titleValidation.errors.join(', '), 400);
+      return errorResponse(titleValidation.errors.join(", "), 400);
     }
 
     // Validate description (optional)
     if (description) {
       const descriptionValidation = validateTodoDescription(description);
       if (!descriptionValidation.isValid) {
-        return errorResponse(descriptionValidation.errors.join(', '), 400);
+        return errorResponse(descriptionValidation.errors.join(", "), 400);
       }
     }
 
     // Validate priority
     const priorityValidation = validateTodoPriority(priority);
     if (!priorityValidation.isValid) {
-      return errorResponse(priorityValidation.errors.join(', '), 400);
+      return errorResponse(priorityValidation.errors.join(", "), 400);
     }
 
     // Generate ID and timestamps
@@ -170,7 +173,7 @@ export async function handleCreateTodo(
 
     // Insert todo into database
     await env.DB.prepare(
-      'INSERT INTO todos (id, title, description, completed, priority, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      "INSERT INTO todos (id, title, description, completed, priority, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
       .bind(
         todoId,
@@ -180,25 +183,25 @@ export async function handleCreateTodo(
         priority,
         userId,
         now,
-        now
+        now,
       )
       .run();
 
     // Fetch the created todo
     const createdTodo = await env.DB.prepare(
-      'SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ?'
+      "SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ?",
     )
       .bind(todoId)
       .first();
 
     if (!createdTodo) {
-      return errorResponse('Failed to create todo', 500);
+      return errorResponse("Failed to create todo", 500);
     }
 
     return successResponse(rowToTodo(createdTodo), 201);
   } catch (error) {
-    console.error('Create todo error:', error);
-    return errorResponse('Failed to create todo', 500);
+    console.error("Create todo error:", error);
+    return errorResponse("Failed to create todo", 500);
   }
 }
 
@@ -210,23 +213,23 @@ export async function handleUpdateTodo(
   request: Request,
   env: Env,
   userId: string,
-  todoId: string
+  todoId: string,
 ): Promise<Response> {
   try {
     // Validate UUID format
     if (!isValidUUID(todoId)) {
-      return errorResponse('Invalid todo ID format', 400);
+      return errorResponse("Invalid todo ID format", 400);
     }
 
     // Check if todo exists and belongs to user
     const existingTodo = await env.DB.prepare(
-      'SELECT id FROM todos WHERE id = ? AND user_id = ?'
+      "SELECT id FROM todos WHERE id = ? AND user_id = ?",
     )
       .bind(todoId, userId)
       .first();
 
     if (!existingTodo) {
-      return errorResponse('Todo not found', 404);
+      return errorResponse("Todo not found", 404);
     }
 
     // Parse and validate JSON body
@@ -241,25 +244,27 @@ export async function handleUpdateTodo(
     if (updates.title !== undefined) {
       const titleValidation = validateTodoTitle(updates.title);
       if (!titleValidation.isValid) {
-        return errorResponse(titleValidation.errors.join(', '), 400);
+        return errorResponse(titleValidation.errors.join(", "), 400);
       }
-      fields.push('title = ?');
+      fields.push("title = ?");
       values.push(updates.title.trim());
     }
 
     // Validate and add description if provided
     if (updates.description !== undefined) {
-      const descriptionValidation = validateTodoDescription(updates.description);
+      const descriptionValidation = validateTodoDescription(
+        updates.description,
+      );
       if (!descriptionValidation.isValid) {
-        return errorResponse(descriptionValidation.errors.join(', '), 400);
+        return errorResponse(descriptionValidation.errors.join(", "), 400);
       }
-      fields.push('description = ?');
+      fields.push("description = ?");
       values.push(updates.description?.trim() || null);
     }
 
     // Add completed if provided
     if (updates.completed !== undefined) {
-      fields.push('completed = ?');
+      fields.push("completed = ?");
       values.push(updates.completed ? 1 : 0);
     }
 
@@ -267,19 +272,19 @@ export async function handleUpdateTodo(
     if (updates.priority !== undefined) {
       const priorityValidation = validateTodoPriority(updates.priority);
       if (!priorityValidation.isValid) {
-        return errorResponse(priorityValidation.errors.join(', '), 400);
+        return errorResponse(priorityValidation.errors.join(", "), 400);
       }
-      fields.push('priority = ?');
+      fields.push("priority = ?");
       values.push(updates.priority);
     }
 
     // Check if there are any fields to update
     if (fields.length === 0) {
-      return errorResponse('No fields to update', 400);
+      return errorResponse("No fields to update", 400);
     }
 
     // Always update updated_at timestamp
-    fields.push('updated_at = ?');
+    fields.push("updated_at = ?");
     values.push(Math.floor(Date.now() / 1000));
 
     // Add todoId and userId to values
@@ -287,26 +292,26 @@ export async function handleUpdateTodo(
 
     // Execute update
     await env.DB.prepare(
-      `UPDATE todos SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`
+      `UPDATE todos SET ${fields.join(", ")} WHERE id = ? AND user_id = ?`,
     )
       .bind(...values)
       .run();
 
     // Fetch updated todo
     const updatedTodo = await env.DB.prepare(
-      'SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ?'
+      "SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ?",
     )
       .bind(todoId)
       .first();
 
     if (!updatedTodo) {
-      return errorResponse('Failed to update todo', 500);
+      return errorResponse("Failed to update todo", 500);
     }
 
     return successResponse(rowToTodo(updatedTodo), 200);
   } catch (error) {
-    console.error('Update todo error:', error);
-    return errorResponse('Failed to update todo', 500);
+    console.error("Update todo error:", error);
+    return errorResponse("Failed to update todo", 500);
   }
 }
 
@@ -318,34 +323,34 @@ export async function handleDeleteTodo(
   request: Request,
   env: Env,
   userId: string,
-  todoId: string
+  todoId: string,
 ): Promise<Response> {
   try {
     // Validate UUID format
     if (!isValidUUID(todoId)) {
-      return errorResponse('Invalid todo ID format', 400);
+      return errorResponse("Invalid todo ID format", 400);
     }
 
     // Check if todo exists and belongs to user
     const existingTodo = await env.DB.prepare(
-      'SELECT id FROM todos WHERE id = ? AND user_id = ?'
+      "SELECT id FROM todos WHERE id = ? AND user_id = ?",
     )
       .bind(todoId, userId)
       .first();
 
     if (!existingTodo) {
-      return errorResponse('Todo not found', 404);
+      return errorResponse("Todo not found", 404);
     }
 
     // Delete todo
-    await env.DB.prepare('DELETE FROM todos WHERE id = ? AND user_id = ?')
+    await env.DB.prepare("DELETE FROM todos WHERE id = ? AND user_id = ?")
       .bind(todoId, userId)
       .run();
 
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error('Delete todo error:', error);
-    return errorResponse('Failed to delete todo', 500);
+    console.error("Delete todo error:", error);
+    return errorResponse("Failed to delete todo", 500);
   }
 }
 
@@ -357,23 +362,23 @@ export async function handleToggleTodo(
   request: Request,
   env: Env,
   userId: string,
-  todoId: string
+  todoId: string,
 ): Promise<Response> {
   try {
     // Validate UUID format
     if (!isValidUUID(todoId)) {
-      return errorResponse('Invalid todo ID format', 400);
+      return errorResponse("Invalid todo ID format", 400);
     }
 
     // Get current todo
     const todo = await env.DB.prepare(
-      'SELECT id, completed FROM todos WHERE id = ? AND user_id = ?'
+      "SELECT id, completed FROM todos WHERE id = ? AND user_id = ?",
     )
       .bind(todoId, userId)
       .first();
 
     if (!todo) {
-      return errorResponse('Todo not found', 404);
+      return errorResponse("Todo not found", 404);
     }
 
     // Toggle completed status
@@ -382,25 +387,25 @@ export async function handleToggleTodo(
 
     // Update todo
     await env.DB.prepare(
-      'UPDATE todos SET completed = ?, updated_at = ? WHERE id = ? AND user_id = ?'
+      "UPDATE todos SET completed = ?, updated_at = ? WHERE id = ? AND user_id = ?",
     )
       .bind(newCompletedStatus, now, todoId, userId)
       .run();
 
     // Fetch updated todo
     const updatedTodo = await env.DB.prepare(
-      'SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ?'
+      "SELECT id, title, description, completed, priority, user_id, created_at, updated_at FROM todos WHERE id = ?",
     )
       .bind(todoId)
       .first();
 
     if (!updatedTodo) {
-      return errorResponse('Failed to toggle todo', 500);
+      return errorResponse("Failed to toggle todo", 500);
     }
 
     return successResponse(rowToTodo(updatedTodo), 200);
   } catch (error) {
-    console.error('Toggle todo error:', error);
-    return errorResponse('Failed to toggle todo', 500);
+    console.error("Toggle todo error:", error);
+    return errorResponse("Failed to toggle todo", 500);
   }
 }
