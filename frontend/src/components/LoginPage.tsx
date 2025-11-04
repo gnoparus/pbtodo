@@ -1,5 +1,5 @@
-import React, { useState, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, FormEvent, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { validateEmail } from '../utils/validation'
 
@@ -7,7 +7,15 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
-  const { login, loading, error, clearError, rateLimitStatus } = useAuth()
+  const { login, loading, error, clearError, rateLimitStatus, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+
+  // Redirect to /todos if user is authenticated (after successful login)
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/todos')
+    }
+  }, [isAuthenticated, navigate])
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {}

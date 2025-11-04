@@ -1,5 +1,5 @@
-import React, { useState, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, FormEvent, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { validatePassword, getPasswordStrengthData } from '../utils/validation'
 
@@ -11,7 +11,15 @@ const RegisterPage: React.FC = () => {
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({})
   const [passwordStrength, setPasswordStrength] = useState({ color: 'red', text: 'Weak', width: '25%' })
   const [passwordFeedback, setPasswordFeedback] = useState<string[]>([])
-  const { register, loading, error, clearError, rateLimitStatus } = useAuth()
+  const { register, loading, error, clearError, rateLimitStatus, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+
+  // Redirect to /todos if user is authenticated (after successful registration)
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/todos')
+    }
+  }, [isAuthenticated, navigate])
 
   const validateForm = (): boolean => {
     const newErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {}
