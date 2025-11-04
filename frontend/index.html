@@ -35,16 +35,16 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <!-- Content Security Policy placeholder (will be replaced by JavaScript) -->
-    <meta http-equiv="Content-Security-Policy" content="" />
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://pbtodo-api.bua.workers.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
 
-    <!-- Other security headers placeholders (will be replaced by JavaScript) -->
-    <meta http-equiv="X-Frame-Options" content="" />
-    <meta http-equiv="X-Content-Type-Options" content="" />
-    <meta http-equiv="X-XSS-Protection" content="" />
-    <meta http-equiv="Referrer-Policy" content="" />
-    <meta http-equiv="Permissions-Policy" content="" />
-    <meta http-equiv="Strict-Transport-Security" content="" />
+    <!-- Other security headers -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains" />
   </head>
   <body>
     <!-- Loading indicator for better UX -->
