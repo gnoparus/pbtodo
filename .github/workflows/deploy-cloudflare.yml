@@ -2,20 +2,20 @@ name: 🚀 Deploy to Cloudflare
 
 on:
   push:
-    branches: [main, feature/cloudflare-serverless]
+    branches: [master, main, feature/cloudflare-serverless]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: "Deployment environment"
         required: true
-        default: 'production'
+        default: "production"
         type: choice
         options:
           - development
           - production
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: "18"
 
 jobs:
   # Job 1: Test and Build
@@ -32,7 +32,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Root Dependencies
         run: npm ci
@@ -86,7 +86,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Workers Dependencies
         run: cd workers && npm install
@@ -117,7 +117,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Download Build Artifacts
         uses: actions/download-artifact@v4

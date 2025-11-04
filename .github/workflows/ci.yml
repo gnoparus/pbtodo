@@ -2,12 +2,12 @@ name: 🚀 CI Pipeline
 
 on:
   push:
-    branches: [main, develop, feature/*]
+    branches: [master, main, develop, feature/*]
   pull_request:
-    branches: [main, develop]
+    branches: [master, main, develop]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: "18"
   CACHE_VERSION: v1
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Dependencies
         run: npm ci
@@ -74,7 +74,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Dependencies
         run: npm ci
@@ -116,7 +116,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Dependencies
         run: npm ci
@@ -127,9 +127,9 @@ jobs:
       - name: 🌐 OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.10.0
         with:
-          target: 'http://localhost:5173'
-          rules_file_name: '.github/config/zap-rules.tsv'
-          cmd_options: '-a'
+          target: "http://localhost:5173"
+          rules_file_name: ".github/config/zap-rules.tsv"
+          cmd_options: "-a"
         continue-on-error: true
 
   # Job 4: Build & Security Hardening
@@ -147,7 +147,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Dependencies
         run: npm ci

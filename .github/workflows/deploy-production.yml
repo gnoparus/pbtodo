@@ -40,16 +40,16 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version == 'latest' && 'main' || github.event.inputs.version }}
+          ref: ${{ github.event.inputs.version == 'latest' && 'master' || github.event.inputs.version }}
 
       - name: 🔍 Validate Deployment Requirements
         id: validation
         run: |
           echo "🔍 Validating deployment requirements..."
 
-          # Check if commit is from main branch
+          # Check if commit is from master branch
           current_branch=$(git rev-parse --abbrev-ref HEAD)
-          if [ "$current_branch" != "main" ] && [ "${{ github.event.inputs.version }}" != "latest" ]; then
+          if [ "$current_branch" != "master" ] && [ "${{ github.event.inputs.version }}" != "latest" ]; then
             echo "⚠️ Deploying from branch: $current_branch"
           fi
 
@@ -117,7 +117,7 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version == 'latest' && 'main' || github.event.inputs.version }}
+          ref: ${{ github.event.inputs.version == 'latest' && 'master' || github.event.inputs.version }}
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
