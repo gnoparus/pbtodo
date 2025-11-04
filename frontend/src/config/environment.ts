@@ -210,7 +210,7 @@ export function getSecurityHeaders(): Record<string, string> {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self'",
-      "connect-src 'self'",
+      "connect-src 'self' https://pbtodo-api.bua.workers.dev",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
