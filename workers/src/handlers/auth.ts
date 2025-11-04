@@ -134,13 +134,24 @@ export async function handleRegister(
       console.error("KV TTL too low:", ttl);
       return errorResponse("Session configuration error", 500);
     }
+
+    // Use inline timestamp calculation to ensure correctness
+    const kvExpiration = Math.floor(Date.now() / 1000) + 86400;
+    console.log(
+      "Registration - KV expiration:",
+      kvExpiration,
+      "current time:",
+      Math.floor(Date.now() / 1000),
+    );
+
     try {
       await env.SESSIONS.put(sessionKey, token, {
-        expirationTtl: ttl,
+        expiration: kvExpiration,
       });
       console.log("Registration - KV PUT successful");
     } catch (kvError) {
       console.error("Registration - KV PUT error:", kvError);
+      console.error("Registration - Failed with expiration:", kvExpiration);
       throw kvError;
     }
 
@@ -231,29 +242,47 @@ export async function handleLogin(
       86400,
     );
 
+    // Decode token to inspect its expiry
+    try {
+      const payload = token.split(".")[1];
+      const decoded = JSON.parse(atob(payload));
+      const now = Math.floor(Date.now() / 1000);
+      const tokenExpiry = decoded.exp;
+      const tokenTTL = tokenExpiry - now;
+      console.log(
+        "Login - Token payload:",
+        JSON.stringify({
+          iat: decoded.iat,
+          exp: decoded.exp,
+          now: now,
+          calculatedTTL: tokenTTL,
+        }),
+      );
+    } catch (e) {
+      console.error("Login - Failed to decode token:", e);
+    }
+
     // Store session in KV (24 hour expiry)
-    // Ensure TTL is at least 60 seconds (Cloudflare KV minimum)
     const sessionKey = `session:${user.id}`;
-    const ttl = 86400; // 24 hours
+    // Use inline timestamp calculation to ensure correctness
+    const kvExpiration = Math.floor(Date.now() / 1000) + 86400;
     console.log(
-      "Login - Setting KV TTL:",
-      ttl,
-      "for key:",
-      sessionKey,
+      "Login - KV expiration:",
+      kvExpiration,
+      "current time:",
+      Math.floor(Date.now() / 1000),
       "token length:",
       token.length,
     );
-    if (ttl < 60) {
-      console.error("KV TTL too low:", ttl);
-      return errorResponse("Session configuration error", 500);
-    }
+
     try {
       await env.SESSIONS.put(sessionKey, token, {
-        expirationTtl: ttl,
+        expiration: kvExpiration,
       });
       console.log("Login - KV PUT successful");
     } catch (kvError) {
       console.error("Login - KV PUT error:", kvError);
+      console.error("Login - Failed with expiration:", kvExpiration);
       throw kvError;
     }
 
@@ -339,22 +368,24 @@ export async function handleRefresh(
     );
 
     // Update session in KV
-    // Store session in KV (24 hour expiry)
-    // Ensure TTL is at least 60 seconds (Cloudflare KV minimum)
-    const sessionKey = `session:${userId}`;
-    const ttl = 86400; // 24 hours
-    console.log("Refresh - Setting KV TTL:", ttl, "for key:", sessionKey);
-    if (ttl < 60) {
-      console.error("KV TTL too low:", ttl);
-      return errorResponse("Session configuration error", 500);
-    }
+    const sessionKey = `session:${user.id}`;
+    // Use inline timestamp calculation to ensure correctness
+    const kvExpiration = Math.floor(Date.now() / 1000) + 86400;
+    console.log(
+      "Refresh - KV expiration:",
+      kvExpiration,
+      "current time:",
+      Math.floor(Date.now() / 1000),
+    );
+
     try {
       await env.SESSIONS.put(sessionKey, token, {
-        expirationTtl: ttl,
+        expiration: kvExpiration,
       });
       console.log("Refresh - KV PUT successful");
     } catch (kvError) {
       console.error("Refresh - KV PUT error:", kvError);
+      console.error("Refresh - Failed with expiration:", expirationTimestamp);
       throw kvError;
     }
 

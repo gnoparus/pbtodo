@@ -3,7 +3,7 @@
  * Uses KV storage to track request rates per IP/user
  */
 
-import type { Env, RateLimitInfo, RateLimitConfig } from '../types';
+import type { Env, RateLimitInfo, RateLimitConfig } from "../types";
 
 /**
  * Default rate limit configurations
@@ -31,23 +31,23 @@ const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
  */
 function getClientIdentifier(request: Request): string {
   // Try to get real IP from Cloudflare headers
-  const cfConnectingIp = request.headers.get('CF-Connecting-IP');
+  const cfConnectingIp = request.headers.get("CF-Connecting-IP");
   if (cfConnectingIp) {
     return cfConnectingIp;
   }
 
   // Fallback to other headers
-  const xForwardedFor = request.headers.get('X-Forwarded-For');
+  const xForwardedFor = request.headers.get("X-Forwarded-For");
   if (xForwardedFor) {
-    return xForwardedFor.split(',')[0].trim();
+    return xForwardedFor.split(",")[0].trim();
   }
 
-  const xRealIp = request.headers.get('X-Real-IP');
+  const xRealIp = request.headers.get("X-Real-IP");
   if (xRealIp) {
     return xRealIp;
   }
 
-  return 'unknown';
+  return "unknown";
 }
 
 /**
@@ -62,7 +62,7 @@ function getRateLimitKey(identifier: string, type: string): string {
  */
 async function getRateLimitInfo(
   env: Env,
-  key: string
+  key: string,
 ): Promise<RateLimitInfo | null> {
   const data = await env.RATE_LIMITS.get(key);
   if (!data) {
@@ -83,10 +83,10 @@ async function saveRateLimitInfo(
   env: Env,
   key: string,
   info: RateLimitInfo,
-  ttlSeconds: number
+  expirationTimestamp: number,
 ): Promise<void> {
   await env.RATE_LIMITS.put(key, JSON.stringify(info), {
-    expirationTtl: ttlSeconds,
+    expiration: expirationTimestamp,
   });
 }
 
@@ -96,8 +96,8 @@ async function saveRateLimitInfo(
 export async function checkRateLimit(
   request: Request,
   env: Env,
-  type: string = 'api',
-  config?: RateLimitConfig
+  type: string = "api",
+  config?: RateLimitConfig,
 ): Promise<{ allowed: boolean; info: RateLimitInfo }> {
   const limitConfig = config || DEFAULT_CONFIGS[type] || DEFAULT_CONFIGS.api;
   const identifier = getClientIdentifier(request);
@@ -141,9 +141,13 @@ export async function checkRateLimit(
     info.resetAt = now + limitConfig.blockDurationMs;
   }
 
-  // Save updated info
-  const ttlSeconds = Math.ceil((info.resetAt - now) / 1000);
-  await saveRateLimitInfo(env, key, info, ttlSeconds);
+  // Save updated info with absolute expiration timestamp
+  // Ensure expiration is at least 65 seconds in the future (KV minimum is 60, adding 5 second buffer)
+  const expirationTimestamp = Math.floor(info.resetAt / 1000);
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const minExpiration = currentTimestamp + 65;
+  const finalExpiration = Math.max(expirationTimestamp, minExpiration);
+  await saveRateLimitInfo(env, key, info, finalExpiration);
 
   return {
     allowed: !info.blocked,
@@ -160,20 +164,20 @@ function rateLimitErrorResponse(info: RateLimitInfo): Response {
   return new Response(
     JSON.stringify({
       success: false,
-      error: 'Too many requests',
+      error: "Too many requests",
       message: `Rate limit exceeded. Try again in ${retryAfter} seconds.`,
       retryAfter,
     }),
     {
       status: 429,
       headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': retryAfter.toString(),
-        'X-RateLimit-Limit': '100',
-        'X-RateLimit-Remaining': '0',
-        'X-RateLimit-Reset': info.resetAt.toString(),
+        "Content-Type": "application/json",
+        "Retry-After": retryAfter.toString(),
+        "X-RateLimit-Limit": "100",
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": info.resetAt.toString(),
       },
-    }
+    },
   );
 }
 
@@ -183,8 +187,8 @@ function rateLimitErrorResponse(info: RateLimitInfo): Response {
 export async function rateLimitMiddleware(
   request: Request,
   env: Env,
-  type: string = 'api',
-  config?: RateLimitConfig
+  type: string = "api",
+  config?: RateLimitConfig,
 ): Promise<Response | null> {
   const { allowed, info } = await checkRateLimit(request, env, type, config);
 
@@ -202,7 +206,7 @@ export async function withRateLimit(
   request: Request,
   env: Env,
   type: string,
-  handler: () => Promise<Response>
+  handler: () => Promise<Response>,
 ): Promise<Response> {
   const limitResponse = await rateLimitMiddleware(request, env, type);
 
@@ -219,7 +223,7 @@ export async function withRateLimit(
 export async function resetRateLimit(
   env: Env,
   identifier: string,
-  type: string
+  type: string,
 ): Promise<void> {
   const key = getRateLimitKey(identifier, type);
   await env.RATE_LIMITS.delete(key);
@@ -231,7 +235,7 @@ export async function resetRateLimit(
 export async function getRateLimitStatus(
   request: Request,
   env: Env,
-  type: string = 'api'
+  type: string = "api",
 ): Promise<RateLimitInfo | null> {
   const identifier = getClientIdentifier(request);
   const key = getRateLimitKey(identifier, type);
