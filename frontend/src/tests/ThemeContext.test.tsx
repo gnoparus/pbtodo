@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext'
 
@@ -188,7 +188,7 @@ describe('ThemeContext', () => {
     expect(screen.getByTestId('current-theme')).toHaveTextContent('light')
   })
 
-  it('prevents flash of incorrect theme during SSR', () => {
+  it('prevents flash of incorrect theme during SSR', async () => {
     const { container } = render(
       <ThemeProvider>
         <TestComponent />
@@ -199,9 +199,9 @@ describe('ThemeContext', () => {
     expect(container.firstChild).toHaveStyle({ visibility: 'hidden' })
 
     // After mounting, it should be visible
-    setTimeout(() => {
+    await waitFor(() => {
       expect(container.firstChild).not.toHaveStyle({ visibility: 'hidden' })
-    }, 0)
+    })
   })
 
   it('throws error when useTheme is used outside ThemeProvider', () => {
