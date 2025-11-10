@@ -108,6 +108,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-test, deploy-workers]
     timeout-minutes: 10
+    permissions:
+      contents: read
+      deployments: write
     environment:
       name: staging
       url: https://develop.pbtodo-frontend.pages.dev
@@ -248,6 +251,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-workers, deploy-pages, health-check]
     if: github.event_name == 'pull_request' && always()
+    permissions:
+      pull-requests: write
 
     steps:
       - name: 💬 Comment on PR
