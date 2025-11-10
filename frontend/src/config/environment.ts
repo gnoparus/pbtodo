@@ -13,6 +13,7 @@
 interface AppConfig {
   // API Configuration
   apiBaseUrl: string
+  pocketbaseUrl: string
 
   // Security Configuration
   httpsEnabled: boolean
@@ -104,6 +105,7 @@ function getListEnvVar(key: string, defaultValue: string[]): string[] {
 export const config: AppConfig = {
   // API Configuration
   apiBaseUrl: getEnvVar('VITE_API_URL', 'http://127.0.0.1:8787/api'),
+  pocketbaseUrl: getEnvVar('VITE_POCKETBASE_URL', 'http://127.0.0.1:8090'),
 
   // Security Configuration
   httpsEnabled: getBoolEnvVar('VITE_HTTPS_ENABLED', false),

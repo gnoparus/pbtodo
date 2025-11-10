@@ -26,6 +26,11 @@ export interface SecurityHeaderConfig {
 
   // HTTPS configuration
   httpsEnabled?: boolean
+
+  // Additional properties
+  apiBaseUrl?: string
+  devMode?: boolean
+  cspEnabled?: boolean
 }
 
 /**
@@ -81,13 +86,7 @@ function buildCSP(config: SecurityHeaderConfig): string {
   connectSrc.push(apiHost)
 
   // Add additional hosts based on environment
-  if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-    connectSrc.push('http://localhost:8787', 'ws://localhost:8787')
-  }
-  } catch (error) {
-    console.error('Invalid API URL provided:', apiBaseUrl)
-    // Optionally skip adding to CSP
-  }
+
 
   if (config.cspReportUri) {
     connectSrc.push(config.cspReportUri)
