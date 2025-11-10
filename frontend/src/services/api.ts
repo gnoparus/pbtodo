@@ -131,7 +131,7 @@ class ApiClient {
       password: string,
       name: string
     ): Promise<AuthResponse> => {
-      const response = await this.request<AuthResponse>('/api/auth/register', {
+      const response = await this.request<AuthResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email, password, name }),
       });
@@ -144,7 +144,7 @@ class ApiClient {
      * Login user
      */
     login: async (email: string, password: string): Promise<AuthResponse> => {
-      const response = await this.request<AuthResponse>('/api/auth/login', {
+      const response = await this.request<AuthResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
@@ -159,7 +159,7 @@ class ApiClient {
     logout: (): void => {
       // Call logout endpoint (fire and forget)
       if (this.token) {
-        this.request('/api/auth/logout', { method: 'POST' }).catch(console.error);
+        this.request('/auth/logout', { method: 'POST' }).catch(console.error);
       }
       this.clearToken();
     },
@@ -168,7 +168,7 @@ class ApiClient {
      * Refresh authentication token
      */
     refresh: async (): Promise<AuthResponse> => {
-      const response = await this.request<AuthResponse>('/api/auth/refresh', {
+      const response = await this.request<AuthResponse>('/auth/refresh', {
         method: 'POST',
       });
 
@@ -259,7 +259,7 @@ class ApiClient {
      * Get all todos for current user
      */
     getAll: async (): Promise<Todo[]> => {
-      return this.request<Todo[]>('/api/todos', {
+      return this.request<Todo[]>('/todos', {
         method: 'GET',
       });
     },
@@ -268,7 +268,7 @@ class ApiClient {
      * Get single todo by ID
      */
     getById: async (id: string): Promise<Todo> => {
-      return this.request<Todo>(`/api/todos/${id}`, {
+      return this.request<Todo>(`/todos/${id}`, {
         method: 'GET',
       });
     },
@@ -289,7 +289,7 @@ class ApiClient {
         todoData.description = data.description;
       }
 
-      return this.request<Todo>('/api/todos', {
+      return this.request<Todo>('/todos', {
         method: 'POST',
         body: JSON.stringify(todoData),
       });
@@ -299,7 +299,7 @@ class ApiClient {
      * Update todo
      */
     update: async (id: string, data: Partial<Todo>): Promise<Todo> => {
-      return this.request<Todo>(`/api/todos/${id}`, {
+      return this.request<Todo>(`/todos/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       });
@@ -309,7 +309,7 @@ class ApiClient {
      * Delete todo
      */
     delete: async (id: string): Promise<boolean> => {
-      await this.request(`/api/todos/${id}`, {
+      await this.request(`/todos/${id}`, {
         method: 'DELETE',
       });
       return true;
@@ -318,10 +318,9 @@ class ApiClient {
     /**
      * Toggle todo completion status
      */
-    toggleComplete: async (id: string, completed: boolean): Promise<Todo> => {
-      return this.request<Todo>(`/api/todos/${id}`, {
+    toggleComplete: async (id: string): Promise<Todo> => {
+      return this.request<Todo>(`/todos/${id}/toggle`, {
         method: 'PATCH',
-        body: JSON.stringify({ completed }),
       });
     },
   };

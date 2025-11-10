@@ -89,11 +89,11 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     }
   }, [])
 
-  const toggleTodoComplete = useCallback(async (id: string, completed: boolean) => {
+  const toggleTodoComplete = useCallback(async (id: string) => {
     setLoading(true)
     setError(null)
     try {
-      const updatedTodo = await api.todos.toggleComplete(id, completed)
+      const updatedTodo = await api.todos.toggleComplete(id)
       setTodos(prev => prev.map(todo =>
         todo.id === id ? updatedTodo : todo
       ))
