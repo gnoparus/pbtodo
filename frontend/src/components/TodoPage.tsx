@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent, useCallback, useMemo } from 'react'
 import { useTodos } from '../contexts/TodoContext'
 import { useAuth } from '../contexts/AuthContext'
+import { Todo } from '../services/api'
 
 interface TodoFilters {
   status: 'all' | 'active' | 'completed'
@@ -29,12 +30,20 @@ const TodoPage: React.FC = () => {
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
 
+  // Inline edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high'>('medium')
+  const [editErrors, setEditErrors] = useState<{ title?: string }>({})
+
   const {
     todos,
     loading,
     error,
     loadTodos,
     createTodo,
+    updateTodo,
     toggleTodoComplete,
     deleteTodo,
     clearError
@@ -185,6 +194,65 @@ const TodoPage: React.FC = () => {
     setSelectedTodos(new Set())
     setShowBulkActions(false)
   }, [selectedTodos, filteredAndSortedTodos, toggleTodoComplete])
+
+  // Inline edit functions
+  const validateEditForm = (): boolean => {
+    const newErrors: { title?: string } = {}
+
+    if (!editTitle.trim()) {
+      newErrors.title = 'Title is required'
+    } else if (editTitle.trim().length < 2) {
+      newErrors.title = 'Title must be at least 2 characters'
+    } else if (editTitle.trim().length > 100) {
+      newErrors.title = 'Title must be less than 100 characters'
+    }
+
+    setEditErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const startEdit = useCallback((todo: Todo) => {
+    setEditingId(todo.id)
+    setEditTitle(todo.title)
+    setEditDescription(todo.description || '')
+    setEditPriority(todo.priority)
+    setEditErrors({})
+  }, [])
+
+  const cancelEdit = useCallback(() => {
+    setEditingId(null)
+    setEditTitle('')
+    setEditDescription('')
+    setEditPriority('medium')
+    setEditErrors({})
+  }, [])
+
+  const saveEdit = useCallback(async () => {
+    if (!editingId || !validateEditForm()) {
+      return
+    }
+
+    try {
+      await updateTodo(editingId, {
+        title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        priority: editPriority,
+      })
+      cancelEdit()
+    } catch (err) {
+      // Error is handled by the todo context
+    }
+  }, [editingId, editTitle, editDescription, editPriority, updateTodo, cancelEdit])
+
+  const handleEditKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      saveEdit()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelEdit()
+    }
+  }, [saveEdit, cancelEdit])
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -629,38 +697,112 @@ const TodoPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className={`text-lg font-medium text-gray-900 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
-                          {todo.title}
-                        </h3>
-                        {todo.description && (
-                          <p className="mt-1 text-sm text-gray-600">{todo.description}</p>
-                        )}
-                        <div className="mt-2 flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(todo.priority)}`}>
-                            {todo.priority}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            Created {new Date(todo.created_at).toLocaleDateString()}
-                          </span>
-                          {todo.completed && (
-                            <span className="text-xs text-gray-500">
-                              • Completed {new Date(todo.updated_at).toLocaleDateString()}
-                            </span>
+                    {editingId === todo.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <input
+                            type="text"
+                            className={`w-full input ${editErrors.title ? 'border-red-500 focus:ring-red-500' : ''}`}
+                            value={editTitle}
+                            onChange={(e) => {
+                              setEditTitle(e.target.value)
+                              if (editErrors.title) {
+                                setEditErrors(prev => ({ ...prev, title: undefined }))
+                              }
+                            }}
+                            onKeyDown={handleEditKeyDown}
+                            placeholder="Todo title"
+                            autoFocus
+                          />
+                          {editErrors.title && (
+                            <p className="mt-1 text-sm text-red-600">{editErrors.title}</p>
                           )}
                         </div>
+
+                        <div>
+                          <textarea
+                            className="w-full input"
+                            rows={2}
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            placeholder="Description (optional)"
+                          />
+                        </div>
+
+                        <div>
+                          <select
+                            className="input"
+                            value={editPriority}
+                            onChange={(e) => setEditPriority(e.target.value as 'low' | 'medium' | 'high')}
+                          >
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                          </select>
+                        </div>
+
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={saveEdit}
+                            disabled={loading}
+                            className="btn btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="btn btn-secondary text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => deleteTodo(todo.id)}
-                        className="ml-2 text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded p-1"
-                        aria-label={`Delete ${todo.title}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className={`text-lg font-medium text-gray-900 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
+                            {todo.title}
+                          </h3>
+                          {todo.description && (
+                            <p className="mt-1 text-sm text-gray-600">{todo.description}</p>
+                          )}
+                          <div className="mt-2 flex items-center space-x-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(todo.priority)}`}>
+                              {todo.priority}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Created {new Date(todo.created_at).toLocaleDateString()}
+                            </span>
+                            {todo.completed && (
+                              <span className="text-xs text-gray-500">
+                                • Completed {new Date(todo.updated_at).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <button
+                            onClick={() => startEdit(todo)}
+                            className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded p-1"
+                            aria-label={`Edit ${todo.title}`}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => deleteTodo(todo.id)}
+                            className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded p-1"
+                            aria-label={`Delete ${todo.title}`}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
