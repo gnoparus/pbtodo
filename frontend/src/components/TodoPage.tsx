@@ -189,7 +189,10 @@ const TodoPage: React.FC = () => {
     const shouldComplete = !todosToToggle.every(todo => todo.completed)
 
     for (const todo of todosToToggle) {
-      await toggleTodoComplete(todo.id, shouldComplete)
+      // Only toggle if the todo's completion state differs from the target state
+      if (todo.completed !== shouldComplete) {
+        await toggleTodoComplete(todo.id)
+      }
     }
     setSelectedTodos(new Set())
     setShowBulkActions(false)
@@ -688,7 +691,7 @@ const TodoPage: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={todo.completed}
-                      onChange={() => toggleTodoComplete(todo.id, !todo.completed)}
+                      onChange={() => toggleTodoComplete(todo.id)}
                       className="checkbox-completion"
                       aria-label={`Mark ${todo.title} as ${todo.completed ? 'active' : 'complete'}`}
                     />

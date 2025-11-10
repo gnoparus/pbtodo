@@ -42,7 +42,7 @@ const TestComponent = ({
       <button onClick={() => context.updateTodo('1', { title: 'Updated' })}>
         Update Todo
       </button>
-      <button onClick={() => context.toggleTodoComplete('1', true)}>
+      <button onClick={() => context.toggleTodoComplete('1')}>
         Toggle Complete
       </button>
       <button onClick={() => context.deleteTodo('1')}>Delete Todo</button>
@@ -537,7 +537,7 @@ describe('TodoContext', () => {
       await user.click(toggleButton)
 
       await waitFor(() => {
-        expect(api.todos.toggleComplete).toHaveBeenCalledWith('1', true)
+        expect(api.todos.toggleComplete).toHaveBeenCalledWith('1')
       })
     })
 

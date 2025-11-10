@@ -47,9 +47,9 @@ const TestComponent = () => {
     }
   }
 
-  const handleToggleTodo = async (id: string, completed: boolean) => {
+  const handleToggleTodo = async (id: string) => {
     try {
-      await toggleTodoComplete(id, completed)
+      await toggleTodoComplete(id)
     } catch {
       // Error is handled by context
     }
@@ -81,7 +81,7 @@ const TestComponent = () => {
               {todo.completed ? 'Completed' : 'Active'}
             </span>
             <button
-              onClick={() => handleToggleTodo(todo.id, !todo.completed)}
+              onClick={() => handleToggleTodo(todo.id)}
               data-testid={`toggle-${todo.id}`}
             >
               Toggle

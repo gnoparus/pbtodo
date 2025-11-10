@@ -8,7 +8,7 @@ interface TodoContextType {
   loadTodos: () => Promise<void>
   createTodo: (title: string, description?: string, priority?: 'low' | 'medium' | 'high') => Promise<void>
   updateTodo: (id: string, data: Partial<Todo>) => Promise<void>
-  toggleTodoComplete: (id: string, completed: boolean) => Promise<void>
+  toggleTodoComplete: (id: string) => Promise<void>
   deleteTodo: (id: string) => Promise<void>
   clearError: () => void
 }
