@@ -13,6 +13,13 @@ on:
 env:
   NODE_VERSION: "20"
 
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
 jobs:
   # Job 1: Build and Test
   build-and-test:
