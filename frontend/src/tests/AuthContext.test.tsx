@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
-import { api } from '../services/pocketbase'
+import { api } from '../services/api'
 
 // Mock the API service
-vi.mock('../services/pocketbase', () => ({
+vi.mock('../services/api', () => ({
   api: {
     auth: {
       login: vi.fn(),
@@ -57,7 +57,7 @@ describe('AuthContext', () => {
     mockRefresh.mockResolvedValue(mockUser)
 
     // Update the API mock to use our functions
-    const apiModule = await import('../services/pocketbase')
+    const apiModule = await import('../services/api')
     Object.assign(apiModule.api.auth, {
       login: mockLogin,
       register: mockRegister,

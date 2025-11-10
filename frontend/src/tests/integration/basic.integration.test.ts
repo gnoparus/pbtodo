@@ -10,6 +10,8 @@ describe('Basic Integration Tests', () => {
     vi.clearAllMocks()
     localStorage.clear()
     localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+    // Reload token from localStorage after setting it
+    api.reloadToken()
   })
 
   describe('API Client Initialization', () => {
@@ -81,6 +83,9 @@ describe('Basic Integration Tests', () => {
     })
 
     it('should maintain auth state after login', async () => {
+      api.clearToken()
+      localStorage.clear()
+
       const mockResponse = {
         success: true,
         data: {

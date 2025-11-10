@@ -25,7 +25,7 @@ export interface Todo {
   updated_at: number;
 }
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -43,16 +43,22 @@ interface AuthResponse {
 class ApiClient {
   private token: string | null = null;
 
-
   constructor() {
     // Load token from localStorage on initialization
     this.token = localStorage.getItem('authToken');
   }
 
   /**
+   * Reload token from localStorage (useful for testing)
+   */
+  reloadToken(): void {
+    this.token = localStorage.getItem('authToken');
+  }
+
+  /**
    * Make HTTP request with error handling
    */
-  private async request<T = any>(
+  private async request<T = unknown>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
@@ -105,7 +111,7 @@ class ApiClient {
   /**
    * Set authentication token
    */
-  private setToken(token: string): void {
+  setToken(token: string): void {
     this.token = token;
     localStorage.setItem('authToken', token);
   }
@@ -113,7 +119,7 @@ class ApiClient {
   /**
    * Clear authentication token
    */
-  private clearToken(): void {
+  clearToken(): void {
     this.token = null;
     localStorage.removeItem('authToken');
   }
@@ -278,7 +284,7 @@ class ApiClient {
      */
     create: async (data: Partial<Todo>): Promise<Todo> => {
       // Prepare todo data
-      const todoData: any = {
+      const todoData: Record<string, unknown> = {
         title: data.title,
         priority: data.priority || 'medium',
         completed: data.completed !== undefined ? data.completed : false,

@@ -12,6 +12,7 @@ describe('API Service Integration Tests', () => {
     vi.clearAllMocks()
     localStorage.clear()
     localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+    api.reloadToken()
     createdTodoIds = []
   })
 

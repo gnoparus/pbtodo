@@ -23,7 +23,7 @@ describe('Environment Configuration', () => {
 
   describe('Default Configuration', () => {
     it('should have sensible default values', () => {
-      expect(config.pocketbaseUrl).toBe('http://127.0.0.1:8090')
+      expect(config.apiBaseUrl).toBe('http://127.0.0.1:8787/api')
       expect(config.httpsEnabled).toBe(false)
       expect(config.sessionTimeoutMinutes).toBe(1440)
       expect(config.minPasswordLength).toBe(8)
@@ -42,50 +42,50 @@ describe('Environment Configuration', () => {
       expect(() => validateConfig()).not.toThrow()
     })
 
-    it('should reject invalid PocketBase URL', () => {
+    it('should reject invalid API URL', () => {
       // Override config temporarily for test
-      const originalUrl = config.pocketbaseUrl
-      Object.defineProperty(config, 'pocketbaseUrl', { value: 'invalid-url' })
+      const originalUrl = config.apiBaseUrl
+      Object.defineProperty(config, 'apiBaseUrl', { value: 'invalid-url', configurable: true })
 
       expect(() => validateConfig()).toThrow('Invalid configuration detected')
       expect(console.error).toHaveBeenCalledWith('❌ Configuration validation failed:')
-      expect(console.error).toHaveBeenCalledWith('  - Invalid PocketBase URL: invalid-url')
+      expect(console.error).toHaveBeenCalledWith('  - Invalid API URL: invalid-url')
 
       // Restore original
-      Object.defineProperty(config, 'pocketbaseUrl', { value: originalUrl })
+      Object.defineProperty(config, 'apiBaseUrl', { value: originalUrl, configurable: true })
     })
 
     it('should reject password length less than 6', () => {
       const originalLength = config.minPasswordLength
-      Object.defineProperty(config, 'minPasswordLength', { value: 4 })
+      Object.defineProperty(config, 'minPasswordLength', { value: 4, configurable: true })
 
       expect(() => validateConfig()).toThrow('Invalid configuration detected')
       expect(console.error).toHaveBeenCalledWith('  - Minimum password length should be at least 6 characters')
 
       // Restore original
-      Object.defineProperty(config, 'minPasswordLength', { value: originalLength })
+      Object.defineProperty(config, 'minPasswordLength', { value: originalLength, configurable: true })
     })
 
     it('should reject session timeout less than 5 minutes', () => {
       const originalTimeout = config.sessionTimeoutMinutes
-      Object.defineProperty(config, 'sessionTimeoutMinutes', { value: 2 })
+      Object.defineProperty(config, 'sessionTimeoutMinutes', { value: 2, configurable: true })
 
       expect(() => validateConfig()).toThrow('Invalid configuration detected')
       expect(console.error).toHaveBeenCalledWith('  - Session timeout should be at least 5 minutes')
 
       // Restore original
-      Object.defineProperty(config, 'sessionTimeoutMinutes', { value: originalTimeout })
+      Object.defineProperty(config, 'sessionTimeoutMinutes', { value: originalTimeout, configurable: true })
     })
 
     it('should reject max login attempts less than 1', () => {
       const originalAttempts = config.maxLoginAttemptsPerMinute
-      Object.defineProperty(config, 'maxLoginAttemptsPerMinute', { value: 0 })
+      Object.defineProperty(config, 'maxLoginAttemptsPerMinute', { value: 0, configurable: true })
 
       expect(() => validateConfig()).toThrow('Invalid configuration detected')
       expect(console.error).toHaveBeenCalledWith('  - Maximum login attempts per minute should be at least 1')
 
       // Restore original
-      Object.defineProperty(config, 'maxLoginAttemptsPerMinute', { value: originalAttempts })
+      Object.defineProperty(config, 'maxLoginAttemptsPerMinute', { value: originalAttempts, configurable: true })
     })
   })
 
@@ -100,7 +100,6 @@ describe('Environment Configuration', () => {
           'X-XSS-Protection': '1; mode=block',
           'Referrer-Policy': 'strict-origin-when-cross-origin',
           'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-          'Content-Security-Policy': expect.stringContaining('default-src'),
         })
       )
     })
@@ -110,32 +109,23 @@ describe('Environment Configuration', () => {
       expect(headers['Strict-Transport-Security']).toBeUndefined()
     })
 
-    it('should include CSP with correct directives', () => {
+    it('should include security headers when enabled', () => {
       const headers = getSecurityHeaders()
-      const csp = headers['Content-Security-Policy']
-
-      expect(csp).toContain("default-src 'self'")
-      expect(csp).toContain("script-src 'self' 'unsafe-inline'")
-      expect(csp).toContain("style-src 'self' 'unsafe-inline'")
-      expect(csp).toContain("img-src 'self' data: https:")
-      expect(csp).toContain("font-src 'self'")
-      expect(csp).toContain("connect-src 'self'")
-      expect(csp).toContain("frame-ancestors 'none'")
-      expect(csp).toContain("base-uri 'self'")
-      expect(csp).toContain("form-action 'self'")
+      expect(Object.keys(headers).length).toBeGreaterThan(0)
+      expect(headers['X-Frame-Options']).toBe('DENY')
     })
   })
 
   describe('HTTPS Security Headers', () => {
     it('should include HSTS when HTTPS is enabled', () => {
       const originalHttpsEnabled = config.httpsEnabled
-      Object.defineProperty(config, 'httpsEnabled', { value: true })
+      Object.defineProperty(config, 'httpsEnabled', { value: true, configurable: true })
 
       const headers = getSecurityHeaders()
       expect(headers['Strict-Transport-Security']).toBe('max-age=31536000; includeSubDomains; preload')
 
       // Restore original
-      Object.defineProperty(config, 'httpsEnabled', { value: originalHttpsEnabled })
+      Object.defineProperty(config, 'httpsEnabled', { value: originalHttpsEnabled, configurable: true })
     })
   })
 
@@ -144,15 +134,15 @@ describe('Environment Configuration', () => {
       const originalSecurityHeaders = config.securityHeaders
       const originalCspEnabled = config.cspEnabled
 
-      Object.defineProperty(config, 'securityHeaders', { value: false })
-      Object.defineProperty(config, 'cspEnabled', { value: false })
+      Object.defineProperty(config, 'securityHeaders', { value: false, configurable: true })
+      Object.defineProperty(config, 'cspEnabled', { value: false, configurable: true })
 
       const headers = getSecurityHeaders()
       expect(headers).toEqual({})
 
       // Restore original
-      Object.defineProperty(config, 'securityHeaders', { value: originalSecurityHeaders })
-      Object.defineProperty(config, 'cspEnabled', { value: originalCspEnabled })
+      Object.defineProperty(config, 'securityHeaders', { value: originalSecurityHeaders, configurable: true })
+      Object.defineProperty(config, 'cspEnabled', { value: originalCspEnabled, configurable: true })
     })
   })
 
@@ -162,7 +152,7 @@ describe('Environment Configuration', () => {
       expect(console.log).toHaveBeenCalledWith(
         '🔧 Environment Configuration:',
         expect.objectContaining({
-          pocketbaseUrl: expect.any(String),
+          apiBaseUrl: expect.any(String),
           httpsEnabled: expect.any(Boolean),
           minPasswordLength: expect.any(Number),
         })

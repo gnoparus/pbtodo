@@ -10,6 +10,7 @@ describe('Error Handling Integration Tests', () => {
     vi.clearAllMocks()
     localStorage.clear()
     localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+    api.reloadToken()
   })
 
   describe('Network Errors', () => {

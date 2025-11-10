@@ -9,6 +9,8 @@ describe('Authentication Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+    api.reloadToken()
   })
 
   describe('User Registration', () => {
