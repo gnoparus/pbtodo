@@ -11,8 +11,8 @@
  */
 
 interface AppConfig {
-  // PocketBase Configuration
-  pocketbaseUrl: string
+  // API Configuration
+  apiBaseUrl: string
 
   // Security Configuration
   httpsEnabled: boolean
@@ -102,8 +102,8 @@ function getListEnvVar(key: string, defaultValue: string[]): string[] {
  * Environment configuration for the application
  */
 export const config: AppConfig = {
-  // PocketBase Configuration
-  pocketbaseUrl: getEnvVar('VITE_POCKETBASE_URL', 'http://127.0.0.1:8090'),
+  // API Configuration
+  apiBaseUrl: getEnvVar('VITE_API_URL', 'http://127.0.0.1:8787/api'),
 
   // Security Configuration
   httpsEnabled: getBoolEnvVar('VITE_HTTPS_ENABLED', false),
@@ -137,11 +137,11 @@ export const config: AppConfig = {
 export function validateConfig(): void {
   const errors: string[] = []
 
-  // Validate PocketBase URL
+  // Validate API URL
   try {
-    new URL(config.pocketbaseUrl)
+    new URL(config.apiBaseUrl)
   } catch {
-    errors.push(`Invalid PocketBase URL: ${config.pocketbaseUrl}`)
+    errors.push(`Invalid API URL: ${config.apiBaseUrl}`)
   }
 
   // Validate password requirements

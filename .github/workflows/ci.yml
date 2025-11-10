@@ -2,9 +2,9 @@ name: 🚀 CI Pipeline
 
 on:
   push:
-    branches: [master, main, develop, feature/*]
+    branches: [main, develop, feature/*]
   pull_request:
-    branches: [master, main, develop]
+    branches: [main, develop]
 
 env:
   NODE_VERSION: "20"

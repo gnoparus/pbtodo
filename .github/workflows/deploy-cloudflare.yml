@@ -1,18 +1,14 @@
-name: 🚀 Deploy to Cloudflare
+name: 🚀 Deploy to Production
 
 on:
   push:
-    branches: [master, main, feature/cloudflare-serverless]
+    branches: [main]
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Deployment environment"
-        required: true
-        default: "production"
-        type: choice
-        options:
-          - development
-          - production
+      reason:
+        description: "Reason for manual production deployment"
+        required: false
+        default: "Manual production deployment"
 
 env:
   NODE_VERSION: "20"
@@ -57,9 +53,10 @@ jobs:
       - name: 🔨 Build Frontend
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://pbtodo-api.workers.dev/api' }}
-          VITE_HTTPS_ENABLED: true
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://pbtodo-api.bua.workers.dev/api' }}
+          VITE_ENVIRONMENT: production
           VITE_DEV_MODE: false
+          VITE_HTTPS_ENABLED: true
           VITE_ENABLE_SECURITY_HEADERS: true
           VITE_ENABLE_CSP: true
           VITE_ENABLE_HSTS: true

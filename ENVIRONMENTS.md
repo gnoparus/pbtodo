@@ -1,14 +1,28 @@
-# Environments Overview
+# 🌍 Environments Overview
 
 This document provides a complete overview of all deployed environments for the pbtodo application.
 
-## 🌍 Environment Summary
+## 📋 Environment Summary
 
-| Environment | Status | Purpose | Branch | Auto-Deploy |
-|-------------|--------|---------|--------|-------------|
-| **Development** | ✅ Active | Local development & testing | feature/* | No |
-| **Staging** | ✅ Active | Pre-production testing | develop | Yes |
-| **Production** | ✅ Active | Live application | master | Yes |
+| Environment | Status | Purpose | Branch | Auto-Deploy | URL |
+|-------------|--------|---------|--------|-------------|--------|------|
+| **Development** | ✅ Active | Local development & testing | feature/* | No | `http://localhost:5173` |
+| **Staging** | ✅ Active | Pre-production testing | develop | Yes | `https://staging.pbtodo-frontend.pages.dev` |
+| **Production** | ✅ Active | Live application | main | Yes | `https://pbtodo-frontend.pages.dev` |
+
+## 🌿 Branch Strategy
+
+### Git Workflow
+```
+feature/* → develop (PR) → main (Release)
+    ↓           ↓              ↓
+Development   Staging         Production
+```
+
+### Deployment Triggers
+- **feature/*** → PR → `develop`**: Triggers staging deployment
+- **develop → main**: Triggers production deployment (after PR approval)
+- **main**: Automatic production deployment
 
 ---
 
@@ -17,12 +31,28 @@ This document provides a complete overview of all deployed environments for the 
 **Purpose:** Local development and feature testing
 
 ### Configuration
+- **Workers API:** `http://localhost:8787`
+- **Frontend:** `http://localhost:5173`
+- **Branch:** `feature/*` branches
+- **Database:** Local development environment
+- **Version:** Current feature branch
 
-- **Workers API:** https://pbtodo-api-dev.bua.workers.dev
-- **Frontend:** http://localhost:5173
-- **Branch:** feature/* branches
-- **Database:** pbtodo-db (shared with production - be careful!)
-- **Version:** 0f24ea42-031e-4344-ad7a-ca76152f6a4e
+### Environment Variables
+```bash
+VITE_API_URL=http://localhost:8787/api
+VITE_ENVIRONMENT=development
+VITE_DEV_MODE=true
+VITE_HTTPS_ENABLED=false
+```
+
+### Local Setup
+```bash
+# Terminal 1: Start API
+cd workers && npm run dev
+
+# Terminal 2: Start frontend  
+cd frontend && npm run dev
+```
 
 ### Resources
 
@@ -40,14 +70,34 @@ database_id = "e3a9f258-138e-4270-84c9-d0d720594105"
 - SESSIONS: `be366149c15e4007be460e67e8ab538f`
 - RATE_LIMITS: `f115bf7d6b584fc7aee5ef4df507c1a9`
 
-### Usage
+## 🔧 Environment Management
 
+### Switching Between Environments
 ```bash
-# Deploy to development
-cd workers
-wrangler deploy --env development
+# Check current branch
+git branch
 
-# Run locally
+# Switch to staging
+git checkout develop
+
+# Switch to main
+git checkout main
+
+# Create feature branch
+git checkout -b feature/new-feature
+```
+
+### Environment Testing
+```bash
+# Test staging API
+curl -s https://pbtodo-api-staging.bua.workers.dev/api/health
+
+# Test production API  
+curl -s https://pbtodo-api.bua.workers.dev/api/health
+
+# Test local API
+curl -s http://localhost:8787/api/health
+```
 npm run dev
 
 # Test development API

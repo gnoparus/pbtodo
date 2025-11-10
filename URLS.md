@@ -53,8 +53,7 @@ https://pbtodo-api-staging.bua.workers.dev
 - Todos: `https://pbtodo-api-staging.bua.workers.dev/api/todos`
 
 ### Frontend
-```
-https://develop.pbtodo-frontend.pages.dev
+- URL: `https://staging.pbtodo-frontend.pages.dev`
 ```
 
 **Alternative staging URLs** (Cloudflare Pages preview):
@@ -79,7 +78,6 @@ https://pbtodo-api.bua.workers.dev
 - Register: `https://pbtodo-api.bua.workers.dev/api/auth/register`
 - Login: `https://pbtodo-api.bua.workers.dev/api/auth/login`
 - Refresh: `https://pbtodo-api.bua.workers.dev/api/auth/refresh`
-- Logout: `https://pbtodo-api.bua.workers.dev/api/auth/logout`
 - Todos (GET): `https://pbtodo-api.bua.workers.dev/api/todos`
 - Todo by ID (GET): `https://pbtodo-api.bua.workers.dev/api/todos/:id`
 - Create Todo (POST): `https://pbtodo-api.bua.workers.dev/api/todos`
@@ -88,6 +86,7 @@ https://pbtodo-api.bua.workers.dev
 - Toggle Todo (PATCH): `https://pbtodo-api.bua.workers.dev/api/todos/:id/toggle`
 
 ### Frontend
+- URL: `https://pbtodo-frontend.pages.dev`
 ```
 https://pbtodo-frontend.pages.dev
 ```

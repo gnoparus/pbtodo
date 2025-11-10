@@ -9,8 +9,7 @@ This application features enterprise-grade security with automated CI/CD pipelin
 ## Architecture
 
 ```
-Frontend (Vite + React + Tailwind) → PocketBase SDK → PocketBase Server (Self-hosted)
-```
+Frontend (Vite + React + Tailwind) → Cloudflare Workers API → Cloudflare Pages (Static)
 
 ### Features
 
@@ -21,6 +20,7 @@ Frontend (Vite + React + Tailwind) → PocketBase SDK → PocketBase Server (Sel
 - ✅ Real-time todo management
 - ✅ Priority levels (low, medium, high)
 - ✅ Test-driven development
+- ✅ Cloudflare serverless deployment
 - 🛡️ Enterprise-grade security (8/10 security score)
 - 🚀 Comprehensive CI/CD pipeline
 - 🔒 Security headers and CSP implementation
