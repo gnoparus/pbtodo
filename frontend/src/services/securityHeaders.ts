@@ -86,8 +86,10 @@ function buildCSP(config: SecurityHeaderConfig): string {
   connectSrc.push(apiHost)
 
   // Add additional hosts based on environment
-
-
+  // In development, allow localhost API endpoints
+  if ((typeof import.meta.env !== 'undefined' && import.meta.env.DEV) || config.devMode) {
+    connectSrc.push('http://localhost:3000', 'https://localhost:3000')
+  }
   if (config.cspReportUri) {
     connectSrc.push(config.cspReportUri)
   }
