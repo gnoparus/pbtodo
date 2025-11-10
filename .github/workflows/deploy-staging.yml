@@ -2,15 +2,15 @@ name: 🚀 Deploy to Staging
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   workflow_run:
     workflows: ["🚀 CI Pipeline"]
     types:
       - completed
-    branches: [main, develop]
+    branches: [main]
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: "20"
   STAGING_DOMAIN: ${{ secrets.STAGING_DOMAIN }}
   STAGING_SERVER: ${{ secrets.STAGING_SERVER }}
   STAGING_USER: ${{ secrets.STAGING_USER }}
@@ -35,7 +35,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install Dependencies
         run: npm ci
