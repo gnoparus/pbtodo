@@ -10,14 +10,14 @@ import type { Env, RateLimitInfo, RateLimitConfig } from "../types";
  */
 const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
   auth: {
-    maxAttempts: 5,
+    maxAttempts: 10,
     windowMs: 60 * 1000, // 1 minute
-    blockDurationMs: 15 * 60 * 1000, // 15 minutes
+    blockDurationMs: 5 * 60 * 1000, // 5 minutes
   },
   registration: {
-    maxAttempts: 3,
+    maxAttempts: 20,
     windowMs: 60 * 1000, // 1 minute
-    blockDurationMs: 30 * 60 * 1000, // 30 minutes
+    blockDurationMs: 5 * 60 * 1000, // 5 minutes (development friendly)
   },
   api: {
     maxAttempts: 100,

@@ -111,7 +111,7 @@ const TodoPage: React.FC = () => {
 
   // Memoized filtered and sorted todos
   const filteredAndSortedTodos = useMemo(() => {
-    let filtered = todos.filter(todo => {
+    const filtered = todos.filter(todo => {
       // Status filter
       if (filters.status === 'active' && todo.completed) return false
       if (filters.status === 'completed' && !todo.completed) return false
