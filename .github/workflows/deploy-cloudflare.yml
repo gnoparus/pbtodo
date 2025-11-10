@@ -53,7 +53,7 @@ jobs:
       - name: 🔨 Build Frontend
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://pbtodo-api.workers.dev/api' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://pbtodo-api.bua.workers.dev/api' }}
           VITE_ENVIRONMENT: production
           VITE_DEV_MODE: false
           VITE_HTTPS_ENABLED: true
@@ -78,7 +78,7 @@ jobs:
       contents: read
     environment:
       name: production
-      url: https://pbtodo-api.workers.dev
+      url: https://pbtodo-api.bua.workers.dev
 
     steps:
       - name: 📥 Checkout Code
@@ -171,7 +171,7 @@ jobs:
           retry_count=0
 
           while [ $retry_count -lt $max_retries ]; do
-            if curl -f -s https://pbtodo-api.workers.dev/api/health > /dev/null; then
+            if curl -f -s https://pbtodo-api.bua.workers.dev/api/health > /dev/null; then
               echo "✅ Workers API is healthy"
               exit 0
             else
@@ -225,7 +225,7 @@ jobs:
           echo "- **Triggered by**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🌐 Deployment URLs" >> $GITHUB_STEP_SUMMARY
-          echo "- **Workers API**: https://pbtodo-api.workers.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workers API**: https://pbtodo-api.bua.workers.dev" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend**: https://pbtodo-frontend.pages.dev" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Status" >> $GITHUB_STEP_SUMMARY
@@ -248,7 +248,7 @@ jobs:
         if: needs.health-check.result == 'success'
         run: |
           echo "🎉 Production deployment completed successfully!"
-          echo "📍 Workers API: https://pbtodo-api.workers.dev"
+          echo "📍 Workers API: https://pbtodo-api.bua.workers.dev"
           echo "📍 Frontend: https://pbtodo-frontend.pages.dev"
 
       - name: ❌ Failure Notification
