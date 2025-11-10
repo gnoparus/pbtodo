@@ -57,15 +57,15 @@ const LoginPage: React.FC = () => {
   // Check if login is rate limited
   if (rateLimitStatus.loginBlocked) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-200">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <div className="flex">
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                   Login Temporarily Blocked
                 </h3>
-                <div className="mt-2 text-sm text-red-700">
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                   Too many failed login attempts. Please try again later.
                 </div>
               </div>
@@ -80,14 +80,14 @@ const LoginPage: React.FC = () => {
     <main className="flex items-center justify-center min-h-screen">
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-gray-100">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Or{' '}
             <Link
               to="/register"
-              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
               sign up for a new account
             </Link>
@@ -100,17 +100,17 @@ const LoginPage: React.FC = () => {
               {/* Error Display */}
               {error && (
                 <div
-                  className="bg-red-50 border border-red-200 rounded-md p-3"
+                  className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3"
                   role="alert"
                   aria-live="polite"
                 >
-                  <p className="text-sm text-red-800">{error}</p>
+                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
                 </div>
               )}
 
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email address
                 </label>
                 <input
@@ -137,7 +137,7 @@ const LoginPage: React.FC = () => {
                   aria-describedby={errors.email ? 'email-error' : undefined}
                 />
                 {errors.email && (
-                  <p id="email-error" className="mt-1 text-sm text-red-600">
+                  <p id="email-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
                     {errors.email}
                   </p>
                 )}
@@ -145,7 +145,7 @@ const LoginPage: React.FC = () => {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Password
                 </label>
                 <input
@@ -173,7 +173,7 @@ const LoginPage: React.FC = () => {
                   aria-describedby={errors.password ? 'password-error' : undefined}
                 />
                 {errors.password && (
-                  <p id="password-error" className="mt-1 text-sm text-red-600">
+                  <p id="password-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
                     {errors.password}
                   </p>
                 )}

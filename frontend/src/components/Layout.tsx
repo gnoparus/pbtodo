@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import ThemeToggle from './ThemeToggle'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -11,7 +12,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation()
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
       {/* Loading overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -25,30 +26,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200" role="banner">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+            <Link to="/" className="text-xl font-bold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Todo SaaS
             </Link>
 
             {/* Navigation */}
             <nav className="flex items-center space-x-4" role="navigation">
+              {/* Theme Toggle */}
+              <ThemeToggle />
               {isAuthenticated ? (
                 <>
                   <Link
                     to="/todos"
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       location.pathname === '/todos'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
                   >
                     My Todos
                   </Link>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Welcome, {user?.name}</span>
                     <button
                       onClick={logout}
                       className="btn btn-secondary text-sm"
@@ -64,8 +67,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     to="/login"
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       location.pathname === '/login'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
                   >
                     Login
@@ -87,7 +90,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
           <div
-            className="bg-red-50 border border-red-200 rounded-md p-4"
+            className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4"
             role="alert"
             aria-live="polite"
           >
@@ -102,13 +105,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </svg>
               </div>
               <div className="ml-3 flex-1">
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
               </div>
               <div className="ml-auto pl-3">
                 <div className="-mx-1.5 -my-1.5">
                   <button
                     onClick={clearError}
-                    className="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600"
+                    className="inline-flex bg-red-50 dark:bg-red-900/20 rounded-md p-1.5 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 dark:focus:ring-offset-red-900/20 focus:ring-red-600 dark:focus:ring-red-400"
                     aria-label="Dismiss error"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -132,9 +135,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto" role="contentinfo">
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="text-center text-sm text-gray-500">
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
             <p>&copy; 2024 Todo SaaS. Built with React, Tailwind CSS, and PocketBase.</p>
           </div>
         </div>

@@ -90,15 +90,15 @@ const RegisterPage: React.FC = () => {
   // Check if registration is rate limited
   if (rateLimitStatus.registrationBlocked) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-200">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
             <div className="flex">
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                   Registration Temporarily Blocked
                 </h3>
-                <div className="mt-2 text-sm text-yellow-700">
+                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
                   Too many registration attempts. Please try again later.
                 </div>
               </div>
@@ -113,14 +113,14 @@ const RegisterPage: React.FC = () => {
     <main className="flex items-center justify-center min-h-screen">
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-gray-100">
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{' '}
             <Link
               to="/login"
-              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
               Sign in
             </Link>
@@ -133,17 +133,17 @@ const RegisterPage: React.FC = () => {
               {/* Error Display */}
               {error && (
                 <div
-                  className="bg-red-50 border border-red-200 rounded-md p-3"
+                  className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3"
                   role="alert"
                   aria-live="polite"
                 >
-                  <p className="text-sm text-red-800">{error}</p>
+                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
                 </div>
               )}
 
               {/* Name Field */}
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Full name
                 </label>
                 <input
@@ -174,7 +174,7 @@ const RegisterPage: React.FC = () => {
                   aria-describedby={errors.name ? 'name-error' : undefined}
                 />
                 {errors.name && (
-                  <p id="name-error" className="mt-1 text-sm text-red-600">
+                  <p id="name-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
                     {errors.name}
                   </p>
                 )}
@@ -182,7 +182,7 @@ const RegisterPage: React.FC = () => {
 
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email address
                 </label>
                 <input
@@ -209,7 +209,7 @@ const RegisterPage: React.FC = () => {
                   aria-describedby={errors.email ? 'email-error' : undefined}
                 />
                 {errors.email && (
-                  <p id="email-error" className="mt-1 text-sm text-red-600">
+                  <p id="email-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
                     {errors.email}
                   </p>
                 )}
@@ -217,7 +217,7 @@ const RegisterPage: React.FC = () => {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Password
                 </label>
                 <input
@@ -249,17 +249,17 @@ const RegisterPage: React.FC = () => {
                 {password && (
                   <div className="mt-2">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-600">Password Strength</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">Password Strength</span>
                       <span className={`text-xs font-medium ${
-                        passwordStrength.color === 'red' ? 'text-red-600' :
-                        passwordStrength.color === 'orange' ? 'text-orange-600' :
-                        passwordStrength.color === 'yellow' ? 'text-yellow-600' :
-                        'text-green-600'
+                        passwordStrength.color === 'red' ? 'text-red-600 dark:text-red-400' :
+                        passwordStrength.color === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                        passwordStrength.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-green-600 dark:text-green-400'
                       }`}>
                         {passwordStrength.text}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all duration-300 ${
                           passwordStrength.color === 'red' ? 'bg-red-500' :
@@ -271,10 +271,10 @@ const RegisterPage: React.FC = () => {
                       />
                     </div>
                     {passwordFeedback.length > 0 && (
-                      <ul className="mt-1 text-xs text-gray-600 space-y-1">
+                      <ul className="mt-1 text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         {passwordFeedback.map((feedback, index) => (
                           <li key={index} className="flex items-center">
-                            <svg className="w-3 h-3 mr-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3 h-3 mr-1 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
                             {feedback}
@@ -288,7 +288,7 @@ const RegisterPage: React.FC = () => {
 
               {/* Confirm Password Field */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Confirm password
                 </label>
                 <input
@@ -316,7 +316,7 @@ const RegisterPage: React.FC = () => {
                   aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
                 />
                 {errors.confirmPassword && (
-                  <p id="confirmPassword-error" className="mt-1 text-sm text-red-600">
+                  <p id="confirmPassword-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
                     {errors.confirmPassword}
                   </p>
                 )}
