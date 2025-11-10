@@ -6,6 +6,11 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
+/**
+ * Main Layout component providing header, navigation, and footer
+ * Features enhanced visual design with gradient background and modern styling
+ * Includes advanced interactions, smooth animations, and polish effects
+ */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, isAuthenticated, loading, error, logout, clearError } = useAuth()
   const location = useLocation()
@@ -24,34 +29,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200" role="banner">
+      {/* Enhanced Header with Gradient Background, Smooth Animations, and Polish */}
+      <header
+        className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-700 shadow-md border-b border-blue-800 transition-shadow duration-300"
+        role="banner"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-              Todo SaaS
+            {/* Logo with Icon and Smooth Hover Animation */}
+            <Link
+              to="/"
+              className="flex items-center space-x-2 text-xl font-bold text-white hover:text-blue-100 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-700 focus:ring-white rounded-lg px-2 py-1 hover:scale-105 active:scale-95"
+            >
+              <span className="text-2xl transition-transform duration-300 hover:scale-110">🚀</span>
+              <span>Todo SaaS</span>
             </Link>
 
             {/* Navigation */}
-            <nav className="flex items-center space-x-4" role="navigation">
+            <nav className="flex items-center space-x-6" role="navigation">
               {isAuthenticated ? (
                 <>
                   <Link
                     to="/todos"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-blue-600 active:scale-95 ${
                       location.pathname === '/todos'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-blue-50 hover:bg-blue-500 hover:text-white'
                     }`}
                   >
                     My Todos
                   </Link>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                  <div className="flex items-center space-x-3 pl-3 border-l border-blue-500 transition-opacity duration-300">
+                    <span className="text-sm font-medium text-blue-50 transition-colors duration-300">Welcome, {user?.name}</span>
                     <button
                       onClick={logout}
-                      className="btn btn-secondary text-sm"
+                      className="btn btn-secondary text-sm hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-blue-600 hover:scale-105 active:scale-95"
                       aria-label="Logout from your account"
                     >
                       Logout
@@ -62,17 +74,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <>
                   <Link
                     to="/login"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-blue-600 active:scale-95 ${
                       location.pathname === '/login'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-blue-50 hover:bg-blue-500 hover:text-white'
                     }`}
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className="btn btn-primary text-sm"
+                    className="btn btn-primary text-sm shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 hover:scale-105 active:scale-95"
                   >
                     Register
                   </Link>
@@ -83,11 +95,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      {/* Error Alert */}
+      {/* Error Alert with Smooth Animation */}
       {error && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
           <div
-            className="bg-red-50 border border-red-200 rounded-md p-4"
+            className="bg-red-50 border border-red-200 rounded-md p-4 shadow-sm transition-all duration-300 hover:shadow-md"
             role="alert"
             aria-live="polite"
           >
@@ -108,7 +120,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="-mx-1.5 -my-1.5">
                   <button
                     onClick={clearError}
-                    className="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600"
+                    className="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600 transition-colors duration-200 active:scale-90"
                     aria-label="Dismiss error"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -132,7 +144,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto" role="contentinfo">
+      <footer className="bg-white border-t border-gray-200 mt-auto shadow-sm transition-shadow duration-300" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center text-sm text-gray-500">
             <p>&copy; 2024 Todo SaaS. Built with React, Tailwind CSS, and PocketBase.</p>
