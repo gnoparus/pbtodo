@@ -77,8 +77,13 @@ function buildCSP(config: SecurityHeaderConfig): string {
 
   // Add API URLs based on environment
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://pbtodo-api.bua.workers.dev'
-  const apiHost = new URL(apiBaseUrl).origin
-  connectSrc.push(apiHost)
+  try {
+    const apiHost = new URL(apiBaseUrl).origin
+    connectSrc.push(apiHost)
+  } catch (error) {
+    console.error('Invalid API URL provided:', apiBaseUrl)
+    // Optionally skip adding to CSP
+  }
 
   if (config.cspReportUri) {
     connectSrc.push(config.cspReportUri)
