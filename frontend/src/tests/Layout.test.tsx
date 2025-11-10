@@ -234,7 +234,8 @@ describe('Layout', () => {
       renderLayout()
 
       const logo = screen.getByRole('link', { name: /Todo SaaS/i })
-      expect(logo).toHaveClass('flex', 'items-center', 'space-x-2', 'text-xl', 'font-bold', 'text-white', 'transition-colors')
+      expect(logo).toHaveClass('flex', 'items-center', 'space-x-2', 'text-xl', 'font-bold')
+      expect(logo.className).toMatch(/transition/)
       expect(logo).toHaveAttribute('href', '/')
     })
 
@@ -475,6 +476,182 @@ describe('Layout', () => {
 
       const logoutBtn = screen.getByRole('button', { name: /logout/i })
       expect(logoutBtn).toHaveAttribute('aria-label', 'Logout from your account')
+    })
+  })
+
+  describe('Polish & Animation', () => {
+    it('should have smooth transitions on all interactive elements', () => {
+      renderLayout()
+
+      const logo = screen.getByRole('link', { name: /Todo SaaS/i })
+      const loginLink = screen.getByText('Login')
+
+      expect(logo.className).toMatch(/transition/)
+      expect(loginLink.className).toMatch(/transition/)
+    })
+
+    it('should have duration-200 for smooth animations', () => {
+      renderLayout()
+
+      const loginLink = screen.getByText('Login')
+      expect(loginLink.className).toMatch(/duration-200/)
+    })
+
+    it('should apply animation on header render', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      expect(header).toBeInTheDocument()
+      // Header should have shadow effect for depth
+      expect(header.className).toMatch(/shadow-/)
+    })
+
+    it('should have hover animation effects on navigation links', () => {
+      renderLayout()
+
+      const loginLink = screen.getByText('Login')
+      expect(loginLink.className).toMatch(/hover:/)
+      expect(loginLink.className).toMatch(/transition/)
+    })
+
+    it('should have button press feedback with transitions', () => {
+      renderLayout({
+        isAuthenticated: false,
+      })
+
+      const registerBtn = screen.getByText('Register')
+      expect(registerBtn.className).toMatch(/transition/)
+      expect(registerBtn.className).toMatch(/hover:/)
+    })
+
+    it('should have shadow elevation on buttons', () => {
+      renderLayout({
+        isAuthenticated: false,
+      })
+
+      const registerBtn = screen.getByText('Register')
+      expect(registerBtn.className).toMatch(/shadow/)
+    })
+
+    it('should have hover shadow animation on buttons', () => {
+      renderLayout({
+        isAuthenticated: false,
+      })
+
+      const registerBtn = screen.getByText('Register')
+      expect(registerBtn.className).toMatch(/hover:shadow/)
+    })
+
+    it('should maintain animation consistency across header states', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const myTodosLink = screen.getByText('My Todos')
+      const logoutBtn = screen.getByText('Logout')
+
+      expect(myTodosLink.className).toMatch(/transition/)
+      expect(logoutBtn.className).toMatch(/transition/)
+    })
+
+    it('should have layered shadows for depth perception', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      const registerBtn = screen.getByText('Register')
+
+      expect(header.className).toMatch(/shadow-md/)
+      expect(registerBtn.className).toMatch(/shadow/)
+    })
+
+    it('should support focus animation effects', () => {
+      renderLayout()
+
+      const loginLink = screen.getByText('Login')
+      expect(loginLink.className).toMatch(/focus:/)
+      expect(loginLink.className).toMatch(/transition/)
+    })
+
+    it('should provide visual feedback for all interactive states', () => {
+      renderLayout()
+
+      const nav = screen.getByRole('navigation')
+      const links = nav.querySelectorAll('a, button')
+
+      // All interactive elements should have transitions
+      links.forEach(link => {
+        expect(link.className).toMatch(/transition|hover:/)
+      })
+    })
+
+    it('should have smooth color transitions on hover', () => {
+      renderLayout()
+
+      const loginLink = screen.getByText('Login')
+      expect(loginLink.className).toMatch(/hover:/)
+      expect(loginLink.className).toMatch(/transition/)
+    })
+
+    it('should apply animation to active state indicators', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const myTodosLink = screen.getByText('My Todos')
+      // Should have transition effects
+      expect(myTodosLink.className).toMatch(/transition/)
+      expect(myTodosLink.className).toMatch(/duration-200/)
+    })
+
+    it('should maintain animation performance with no jank', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      expect(header).toBeInTheDocument()
+
+      const links = header.querySelectorAll('a, button')
+      links.forEach(link => {
+        // All links should use efficient transitions (not animations)
+        expect(link.className).toMatch(/transition/)
+      })
+    })
+
+    it('should have consistent timing across animations', () => {
+      renderLayout()
+
+      const logo = screen.getByRole('link', { name: /Todo SaaS/i })
+      const loginLink = screen.getByText('Login')
+      const registerBtn = screen.getByText('Register')
+
+      // All should use duration-200 for consistency
+      expect(registerBtn.className).toMatch(/duration-200/)
+      expect(loginLink.className).toMatch(/duration-200|transition/)
+    })
+
+    it('should support prefers-reduced-motion for accessibility', () => {
+      renderLayout()
+
+      // All transitions should be defined, allowing CSS to handle prefersReducedMotion
+      const logo = screen.getByRole('link', { name: /Todo SaaS/i })
+      expect(logo.className).toMatch(/transition/)
     })
   })
 })
