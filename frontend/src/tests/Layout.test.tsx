@@ -317,4 +317,164 @@ describe('Layout', () => {
       expect(logoutBtn).toHaveClass('btn')
     })
   })
+
+  describe('Advanced Interactions - User Profile Badge', () => {
+    it('should display user initials in profile badge when authenticated', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'John Doe',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const welcomeText = screen.getByText(/Welcome, John Doe/i)
+      expect(welcomeText).toBeInTheDocument()
+    })
+
+    it('should show logout button with enhanced styling', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const logoutBtn = screen.getByText('Logout')
+      expect(logoutBtn).toHaveClass('btn', 'btn-secondary')
+    })
+
+    it('should have visual separator between user info and logout button', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const userSection = screen.getByText(/Welcome/).parentElement
+      expect(userSection).toHaveClass('border-l', 'border-blue-500')
+    })
+
+    it('should group user info and logout together on authenticated header', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const welcome = screen.getByText(/Welcome/)
+      const logout = screen.getByText('Logout')
+
+      expect(welcome).toBeInTheDocument()
+      expect(logout).toBeInTheDocument()
+      expect(welcome.parentElement).toHaveClass('space-x-3')
+    })
+
+    it('should have enhanced focus states for interactive elements', () => {
+      renderLayout({
+        isAuthenticated: false,
+      })
+
+      const loginLink = screen.getByRole('link', { name: /login/i })
+      expect(loginLink.className).toMatch(/focus:/)
+    })
+
+    it('should apply active state styling to current page link', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const myTodosLink = screen.getByRole('link', { name: /my todos/i })
+      // Should have active styling when on /todos page
+      expect(myTodosLink.className).toMatch(/bg-blue-500|text-white|shadow-md/)
+    })
+
+    it('should have smooth transitions on user section elements', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const logoutBtn = screen.getByText('Logout')
+      expect(logoutBtn.className).toMatch(/transition/)
+    })
+
+    it('should maintain proper spacing in authenticated header', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const nav = screen.getByRole('navigation')
+      expect(nav).toHaveClass('space-x-6')
+    })
+
+    it('should be accessible with proper ARIA labels', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        created: '2023-01-01T00:00:00Z',
+        updated: '2023-01-01T00:00:00Z',
+      }
+
+      renderLayout({
+        isAuthenticated: true,
+        user: mockUser,
+      })
+
+      const logoutBtn = screen.getByRole('button', { name: /logout/i })
+      expect(logoutBtn).toHaveAttribute('aria-label', 'Logout from your account')
+    })
+  })
 })

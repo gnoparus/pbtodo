@@ -50,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <>
                   <Link
                     to="/todos"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-blue-600 ${
                       location.pathname === '/todos'
                         ? 'bg-blue-500 text-white shadow-md'
                         : 'text-blue-50 hover:bg-blue-500 hover:text-white'
@@ -62,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <span className="text-sm font-medium text-blue-50">Welcome, {user?.name}</span>
                     <button
                       onClick={logout}
-                      className="btn btn-secondary text-sm hover:shadow-lg transition-shadow duration-200"
+                      className="btn btn-secondary text-sm hover:shadow-lg transition-shadow duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-blue-600"
                       aria-label="Logout from your account"
                     >
                       Logout
@@ -73,7 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <>
                   <Link
                     to="/login"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-blue-600 ${
                       location.pathname === '/login'
                         ? 'bg-blue-500 text-white shadow-md'
                         : 'text-blue-50 hover:bg-blue-500 hover:text-white'
@@ -83,7 +83,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Link>
                   <Link
                     to="/register"
-                    className="btn btn-primary text-sm shadow-md hover:shadow-lg transition-shadow duration-200"
+                    className="btn btn-primary text-sm shadow-md hover:shadow-lg transition-shadow duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600"
                   >
                     Register
                   </Link>
