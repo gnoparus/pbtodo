@@ -44,10 +44,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setMounted(true)
 
     try {
-      const storedTheme = localStorage.getItem('theme') as Theme | null
+      const storedValue = localStorage.getItem('theme')
 
-      if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark')) {
-        setThemeState(storedTheme)
+      if (storedValue === 'light' || storedValue === 'dark') {
+        setThemeState(storedValue)
       } else {
         // Use system preference as default
         setThemeState(systemTheme)
