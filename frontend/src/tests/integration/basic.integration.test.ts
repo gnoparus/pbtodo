@@ -1,223 +1,391 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { testPb, dataManager, userManager, handlePermissionError } from './setup'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { api } from '../../services/api'
+import { TEST_CONFIG, MOCK_TEST_USER, MOCK_AUTH_TOKEN } from './setup'
+
+// Mock the fetch function
+global.fetch = vi.fn()
 
 describe('Basic Integration Tests', () => {
-  beforeEach(async () => {
-    await userManager.loginTestUser()
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
   })
 
-  describe('PocketBase Connection', () => {
-    it('should connect to PocketBase server', async () => {
-      // Test basic connectivity
-      const health = await testPb.health.check()
-      expect(health.code).toBe(200)
+  describe('API Client Initialization', () => {
+    it('should initialize with token from localStorage', () => {
+      const token = localStorage.getItem('authToken')
+      expect(token).toBe(MOCK_AUTH_TOKEN)
     })
 
-    it('should authenticate test user', async () => {
-      // Test that user authentication works
-      const auth = testPb.authStore
-      expect(auth.isValid).toBe(true)
-      expect(auth.model).toBeDefined()
-      expect(auth.model?.email).toContain('@example.com')
-    })
-  })
-
-  describe('Users Collection', () => {
-    it('should access users collection info', async () => {
-      try {
-        // Test that we can access the users collection
-        const users = await testPb.collection('users').getFullList(1)
-        expect(users).toBeDefined()
-        expect(Array.isArray(users)).toBe(true)
-      } catch (error) {
-        if (handlePermissionError(error, 'Users Collection Access')) {
-          return
-        }
-        throw error
-      }
+    it('should recognize authenticated state', () => {
+      expect(api.auth.isAuthenticated()).toBe(true)
     })
 
-    it('should create and verify user', async () => {
-      const timestamp = Date.now()
-      const randomEmail = `test_${timestamp}@example.com`
-      const password = 'testpassword123'
-      const name = 'Test User'
-
-      try {
-        // Create user
-        const user = await testPb.collection('users').create({
-          email: randomEmail,
-          password,
-          passwordConfirm: password,
-          name,
-        })
-
-        console.log('Created user:', user)
-
-        expect(user).toBeDefined()
-        expect(user.id).toBeDefined()
-        expect(user.name).toBe(name)
-        // PocketBase doesn't return email in create response for security
-        // We'll verify the user was created by trying to authenticate
-
-        // Try to authenticate as new user to verify creation worked
-        const auth = await testPb.collection('users').authWithPassword(randomEmail, password)
-        expect(auth.record.email).toBe(randomEmail)
-
-        // Log back in as test user
-        await userManager.loginTestUser()
-      } catch (error) {
-        console.log('User creation error:', error)
-        if (handlePermissionError(error, 'User Creation') ||
-            error?.message?.includes('validation') ||
-            error?.message?.includes('required') ||
-            error?.message?.includes('already registered')) {
-          // Skip user creation if permissions not configured or validation fails
-          console.warn('⚠️ User creation failed - skipping test:', error?.message || error)
-          expect(true).toBe(true)
-        } else {
-          throw error
-        }
-      }
-    })
-  })
-
-  describe('Todos Collection Structure', () => {
-    it('should access todos collection schema', async () => {
-      try {
-        // Test that we can access the todos collection (even if permissions block listing)
-        const todos = await testPb.collection('todos').getFullList(1)
-        expect(todos).toBeDefined()
-        expect(Array.isArray(todos)).toBe(true)
-      } catch (error) {
-        if (handlePermissionError(error, 'Todos Collection Schema')) {
-          return
-        }
-        throw error
-      }
-    })
-
-    it('should validate todo structure without permissions', async () => {
-      try {
-        // Test creating a todo structure
-        const todoData = {
-          title: 'Test Todo',
-          description: 'Test Description',
-          completed: false,
-          priority: 'medium' as const,
-          user: userManager.getTestId(),
-        }
-
-        // Validate the data structure
-        expect(todoData.title).toBe('Test Todo')
-        expect(todoData.description).toBe('Test Description')
-        expect(todoData.completed).toBe(false)
-        expect(todoData.priority).toBe('medium')
-        expect(todoData.user).toBeDefined()
-
-        console.log('✅ Todo data structure validation passed')
-      } catch (error) {
-        console.error('Todo structure validation failed:', error)
-        throw error
-      }
-    })
-  })
-
-  describe('API Response Format', () => {
-    it('should return proper error format', async () => {
-      try {
-        // Try to access non-existent todo
-        await testPb.collection('todos').getOne('non-existent-id')
-        expect.fail('Should have thrown an error')
-      } catch (error) {
-        // PocketBase errors should have proper structure
-        expect(error).toBeDefined()
-        expect(typeof error.message).toBe('string')
-        expect(typeof error.status).toBe('number')
-
-        // Should be a 404 for non-existent ID or permission error
-        expect([404, 403]).toContain(error.status)
-      }
-    })
-
-    it('should handle malformed requests', async () => {
-      try {
-        // Try to create todo with invalid data
-        const promise = testPb.collection('todos').create({
-          title: '', // Invalid: empty title
-          user: userManager.getTestId(),
-        })
-
-        await expect(promise).rejects.toThrow()
-      } catch (error) {
-        if (handlePermissionError(error, 'Malformed Request Test')) {
-          return
-        }
-        // This should fail with validation error even without permissions
-        expect(error.status).toBe(400)
-      }
-    })
-  })
-
-  describe('Data Validation', () => {
-    it('should validate email format', async () => {
-      const promise = testPb.collection('users').create({
-        email: 'invalid-email',
-        password: 'testpassword123',
-        passwordConfirm: 'testpassword123',
-        name: 'Test User',
-      })
-
-      await expect(promise).rejects.toThrow()
-    })
-
-    it('should validate required fields', async () => {
-      try {
-        const promise = testPb.collection('users').create({
-          email: '', // Invalid: empty email
-          password: 'testpassword123',
-          passwordConfirm: 'testpassword123',
-          name: 'Test User',
-        })
-
-        await expect(promise).rejects.toThrow()
-      } catch (error) {
-        if (handlePermissionError(error, 'Required Fields Validation')) {
-          return
-        }
-        throw error
-      }
+    it('should decode user from token', () => {
+      const user = api.auth.getCurrentUser()
+      expect(user).toBeDefined()
+      expect(user?.id).toBeDefined()
+      expect(user?.email).toBeDefined()
     })
   })
 
   describe('Authentication Flow', () => {
-    it('should handle login with wrong credentials', async () => {
-      const promise = testPb.collection('users').authWithPassword(
-        'wrong@example.com',
-        'wrongpassword'
+    it('should handle login with valid credentials', async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          token: MOCK_AUTH_TOKEN,
+          user: MOCK_TEST_USER,
+        },
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.auth.login(
+        TEST_CONFIG.testUserEmail,
+        TEST_CONFIG.testUserPassword
       )
 
-      await expect(promise).rejects.toThrow()
+      expect(result).toBeDefined()
+      expect(result.user).toBeDefined()
+      expect(result.token).toBeDefined()
     })
 
-    it('should maintain auth state', async () => {
-      // Verify that auth state persists
-      expect(testPb.authStore.isValid).toBe(true)
-      expect(testPb.authStore.token).toBeDefined()
-      expect(testPb.authStore.model).toBeDefined()
+    it('should reject login with invalid credentials', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid email or password',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.login('wrong@example.com', 'wrongpassword')
+      ).rejects.toThrow()
     })
 
-    it('should handle logout correctly', async () => {
-      // Logout
-      testPb.authStore.clear()
+    it('should handle logout correctly', () => {
+      api.auth.logout()
 
-      // Verify auth state is cleared
-      expect(testPb.authStore.isValid).toBe(false)
-      expect(testPb.authStore.token).toBe('')
-      expect(testPb.authStore.model).toBeNull()
+      expect(localStorage.getItem('authToken')).toBeNull()
+      expect(api.auth.isAuthenticated()).toBe(false)
+    })
 
-      // Log back in for other tests
-      await userManager.loginTestUser()
+    it('should maintain auth state after login', async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          token: MOCK_AUTH_TOKEN,
+          user: MOCK_TEST_USER,
+        },
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      await api.auth.login(
+        TEST_CONFIG.testUserEmail,
+        TEST_CONFIG.testUserPassword
+      )
+
+      expect(api.auth.isAuthenticated()).toBe(true)
+      expect(localStorage.getItem('authToken')).toBeDefined()
+    })
+  })
+
+  describe('Todo Operations', () => {
+    it('should fetch all todos', async () => {
+      const mockTodos = [
+        {
+          id: 'todo-1',
+          title: 'Todo 1',
+          completed: false,
+          priority: 'medium' as const,
+          user_id: MOCK_TEST_USER.id,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        },
+      ]
+
+      const mockResponse = {
+        success: true,
+        data: mockTodos,
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.todos.getAll()
+
+      expect(Array.isArray(result)).toBe(true)
+      expect(result.length).toBeGreaterThanOrEqual(0)
+    })
+
+    it('should create a todo', async () => {
+      const mockTodo = {
+        id: 'todo-new',
+        title: 'New Todo',
+        completed: false,
+        priority: 'medium' as const,
+        user_id: MOCK_TEST_USER.id,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      }
+
+      const mockResponse = {
+        success: true,
+        data: mockTodo,
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.todos.create({
+        title: 'New Todo',
+        priority: 'medium',
+      })
+
+      expect(result).toBeDefined()
+      expect(result.id).toBeDefined()
+      expect(result.title).toBe('New Todo')
+    })
+
+    it('should update a todo', async () => {
+      const mockTodo = {
+        id: 'todo-1',
+        title: 'Updated Todo',
+        completed: true,
+        priority: 'high' as const,
+        user_id: MOCK_TEST_USER.id,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      }
+
+      const mockResponse = {
+        success: true,
+        data: mockTodo,
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.todos.update('todo-1', {
+        title: 'Updated Todo',
+        completed: true,
+        priority: 'high',
+      })
+
+      expect(result).toBeDefined()
+      expect(result.title).toBe('Updated Todo')
+      expect(result.completed).toBe(true)
+    })
+
+    it('should delete a todo', async () => {
+      const mockResponse = {
+        success: true,
+        data: null,
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.todos.delete('todo-1')
+
+      expect(result).toBe(true)
+    })
+  })
+
+  describe('Error Handling', () => {
+    it('should handle network errors', async () => {
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('Network request failed')
+      )
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle invalid JSON responses', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new Error('Invalid JSON')
+        },
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle server errors (5xx)', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Internal server error',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle bad request errors (4xx)', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Bad request',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+  })
+
+  describe('Data Validation', () => {
+    it('should validate email format on registration', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid email format',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.register('invalid-email', 'Password123!', 'User')
+      ).rejects.toThrow()
+    })
+
+    it('should validate password requirements on registration', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Password does not meet complexity requirements',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.register('user@example.com', 'weak', 'User')
+      ).rejects.toThrow()
+    })
+
+    it('should require title for todo creation', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Title is required',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.todos.create({ title: '' })
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('API Response Format', () => {
+    it('should handle 204 No Content responses', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        json: async () => null,
+      })
+
+      const result = await api.todos.delete('todo-1')
+
+      expect(result).toBe(true)
+    })
+
+    it('should extract data from success responses', async () => {
+      const mockTodo = {
+        id: 'todo-1',
+        title: 'Test Todo',
+        completed: false,
+        priority: 'medium' as const,
+        user_id: MOCK_TEST_USER.id,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      }
+
+      const mockResponse = {
+        success: true,
+        data: mockTodo,
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.todos.getById('todo-1')
+
+      expect(result).toEqual(mockTodo)
+    })
+
+    it('should include authorization header when authenticated', async () => {
+      const mockResponse = {
+        success: true,
+        data: [],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      await api.todos.getAll()
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${MOCK_AUTH_TOKEN}`,
+          }),
+        })
+      )
     })
   })
 })

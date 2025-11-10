@@ -1,13 +1,9 @@
 import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest'
-import PocketBase from 'pocketbase'
-
-// Flag to track if database is available
-let databaseAvailable = true
 
 // Mock environment variables for integration tests
 vi.stubGlobal('import.meta', {
   env: {
-    VITE_POCKETBASE_URL: 'http://127.0.0.1:8090',
+    VITE_API_URL: 'http://127.0.0.1:8787/api',
     VITE_HTTPS_ENABLED: 'false',
     VITE_SESSION_TIMEOUT_MINUTES: '1440',
     VITE_MIN_PASSWORD_LENGTH: '8',
@@ -23,156 +19,91 @@ vi.stubGlobal('import.meta', {
 
 // Test configuration
 export const TEST_CONFIG = {
-  pocketbaseUrl: 'http://127.0.0.1:8090',
   testUserEmail: 'test@example.com',
   testUserPassword: 'testpassword123',
   testUserName: 'Test User',
   testPrefix: 'test_',
-  skipPermissionTests: true, // Flag to skip tests requiring collection permissions
 }
+
+// Mock user data
+export const MOCK_TEST_USER = {
+  id: 'test-user-123',
+  email: TEST_CONFIG.testUserEmail,
+  name: TEST_CONFIG.testUserName,
+  avatar: undefined,
+  created_at: Math.floor(Date.now() / 1000),
+  updated_at: Math.floor(Date.now() / 1000),
+}
+
+// Mock auth token
+export const MOCK_AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItMTIzIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAxMDAwMDB9.mock'
 
 // Test cleanup utilities
 export class TestDataManager {
-  private pb: PocketBase
   private createdIds: string[] = []
-
-  constructor(pb: PocketBase) {
-    this.pb = pb
-  }
 
   async recordCreatedId(id: string) {
     this.createdIds.push(id)
   }
 
   async cleanup() {
-    // Clean up created todos
-    for (const id of this.createdIds) {
-      try {
-        await this.pb.collection('todos').delete(id)
-      } catch (error) {
-        console.warn('Failed to cleanup todo:', id, error)
-      }
-    }
+    // In mock mode, just clear the list
     this.createdIds = []
   }
 }
 
 // Test user management
 export class TestUserManager {
-  private pb: PocketBase
-  private testUserExists = false
-
-  constructor(pb: PocketBase) {
-    this.pb = pb
-  }
+  private isAuthenticated = false
 
   async ensureTestUser() {
-    if (!databaseAvailable) {
-      console.log('Database not available, skipping test user creation')
-      return
-    }
-
-    try {
-      // Try to authenticate with existing test user
-      await this.pb.collection('users').authWithPassword(
-        TEST_CONFIG.testUserEmail,
-        TEST_CONFIG.testUserPassword
-      )
-      return
-    } catch (error) {
-      // User doesn't exist or password is wrong, try to create it
-    }
-
-    try {
-      // Generate unique email for test user
-      const timestamp = Date.now()
-      const uniqueEmail = `test_${timestamp}@example.com`
-
-      await this.pb.collection('users').create({
-        email: uniqueEmail,
-        password: TEST_CONFIG.testUserPassword,
-        passwordConfirm: TEST_CONFIG.testUserPassword,
-        name: TEST_CONFIG.testUserName,
-      })
-
-      // Update config to use new email
-      TEST_CONFIG.testUserEmail = uniqueEmail
-
-      // Login with new user
-      await this.pb.collection('users').authWithPassword(
-        TEST_CONFIG.testUserEmail,
-        TEST_CONFIG.testUserPassword
-      )
-      this.testUserExists = true
-    } catch (error) {
-      console.error('Failed to create test user:', error)
-      throw error
-    }
+    // In mock mode, just set authenticated
+    this.isAuthenticated = true
   }
 
   async loginTestUser() {
-    await this.pb.collection('users').authWithPassword(
-      TEST_CONFIG.testUserEmail,
-      TEST_CONFIG.testUserPassword
-    )
+    this.isAuthenticated = true
+    localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
   }
 
   async logout() {
-    this.pb.authStore.clear()
+    this.isAuthenticated = false
+    localStorage.removeItem('authToken')
   }
 
   getTestId(): string {
-    return this.pb.authStore.model?.id || ''
+    return MOCK_TEST_USER.id
+  }
+
+  isLoggedIn(): boolean {
+    return this.isAuthenticated
   }
 }
 
 // Global test setup
-let testPb: PocketBase
 let dataManager: TestDataManager
 let userManager: TestUserManager
 
 beforeAll(async () => {
-  try {
-    testPb = new PocketBase(TEST_CONFIG.pocketbaseUrl)
-    testPb.autoCancellation(false)
-
-    // Test database connectivity
-    await testPb.health.check()
-
-    dataManager = new TestDataManager(testPb)
-    userManager = new TestUserManager(testPb)
-
-    // Ensure test user exists
-    await userManager.ensureTestUser()
-  } catch (error) {
-    console.log('Database connection failed, integration tests will be skipped:', error)
-    databaseAvailable = false
-
-    // Mark tests as skipped
-    testPb = null
-    dataManager = null
-    userManager = null
-  }
+  dataManager = new TestDataManager()
+  userManager = new TestUserManager()
 })
 
 afterAll(async () => {
-  // Cleanup and logout only if database is available
-  if (databaseAvailable && dataManager && userManager) {
+  if (dataManager && userManager) {
     await dataManager.cleanup()
     await userManager.logout()
   }
 })
 
 beforeEach(async () => {
-  // Login as test user before each test only if database is available
-  if (databaseAvailable && userManager) {
+  if (userManager) {
     await userManager.loginTestUser()
   }
 })
 
 afterEach(async () => {
-  // Clean up test data after each test only if database is available
-  if (databaseAvailable && dataManager && userManager) {
+  if (dataManager && userManager) {
     await dataManager.cleanup()
     await userManager.logout()
   }
@@ -187,4 +118,4 @@ export function handlePermissionError(error: any, testName: string): boolean {
   return false
 }
 
-export { testPb, dataManager, userManager }
+export { dataManager, userManager }

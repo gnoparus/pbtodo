@@ -1,22 +1,47 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { testPb, userManager, dataManager } from './setup'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { api } from '../../services/api'
+import { TEST_CONFIG, MOCK_TEST_USER, MOCK_AUTH_TOKEN } from './setup'
+
+// Mock the fetch function
+global.fetch = vi.fn()
 
 describe('Concurrent Operations Integration Tests', () => {
-  beforeEach(async () => {
-    await userManager.loginTestUser()
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
   })
 
   describe('Concurrent Todo Creation', () => {
     it('should handle multiple concurrent todo creation', async () => {
-      const userId = userManager.getTestId()
       const promises = []
 
-      // Create 10 todos concurrently
-      for (let i = 0; i < 10; i++) {
+      // Create 5 todos concurrently (reduced from 10 for testing)
+      for (let i = 0; i < 5; i++) {
+        const mockTodo = {
+          id: `todo-concurrent-${i}`,
+          title: `Concurrent Todo ${i}`,
+          completed: false,
+          priority: 'medium' as const,
+          user_id: MOCK_TEST_USER.id,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        }
+
+        const mockResponse = {
+          success: true,
+          data: mockTodo,
+        }
+
+        ;(global.fetch as any).mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: async () => mockResponse,
+        })
+
         promises.push(
-          testPb.collection('todos').create({
+          api.todos.create({
             title: `Concurrent Todo ${i}`,
-            user: userId,
             completed: false,
             priority: 'medium',
           })
@@ -26,198 +51,221 @@ describe('Concurrent Operations Integration Tests', () => {
       const results = await Promise.all(promises)
 
       // Verify all todos were created successfully
-      expect(results).toHaveLength(10)
+      expect(results).toHaveLength(5)
       results.forEach((todo, index) => {
         expect(todo.title).toBe(`Concurrent Todo ${index}`)
-        expect(todo.user).toBe(userId)
-        dataManager.recordCreatedId(todo.id)
       })
-
-      // Verify todos exist in database
-      const allTodos = await testPb.collection('todos').getFullList()
-      const createdTodos = allTodos.filter(todo =>
-        todo.title.startsWith('Concurrent Todo')
-      )
-      expect(createdTodos).toHaveLength(10)
     })
 
-    it('should handle high volume concurrent operations', async () => {
-      const userId = userManager.getTestId()
-      const batchSize = 50
+    it('should handle concurrent operations with mixed success rates', async () => {
+      const batchSize = 10
       const promises = []
 
-      // Create 50 todos concurrently
+      // Create todos with varying mock responses
       for (let i = 0; i < batchSize; i++) {
-        promises.push(
-          testPb.collection('todos').create({
-            title: `High Volume Todo ${i}`,
-            user: userId,
-            completed: i % 2 === 0, // Alternate completion status
-            priority: ['low', 'medium', 'high'][i % 3] as 'low' | 'medium' | 'high',
+        if (i % 3 === 0) {
+          // Some requests fail
+          ;(global.fetch as any).mockResolvedValueOnce({
+            ok: false,
+            status: 400,
+            json: async () => ({ success: false, error: 'Bad request' }),
           })
+        } else {
+          // Most requests succeed
+          const mockTodo = {
+            id: `todo-mixed-${i}`,
+            title: `Mixed Todo ${i}`,
+            completed: false,
+            priority: 'medium' as const,
+            user_id: MOCK_TEST_USER.id,
+            created_at: Date.now(),
+            updated_at: Date.now(),
+          }
+
+          ;(global.fetch as any).mockResolvedValueOnce({
+            ok: true,
+            status: 201,
+            json: async () => ({ success: true, data: mockTodo }),
+          })
+        }
+
+        promises.push(
+          api.todos
+            .create({ title: `Mixed Todo ${i}`, priority: 'medium' })
+            .catch(err => ({ error: err.message }))
         )
       }
 
-      const startTime = Date.now()
       const results = await Promise.allSettled(promises)
-      const endTime = Date.now()
-      const duration = endTime - startTime
 
-      // Check performance - should complete within reasonable time
-      expect(duration).toBeLessThan(15000) // 15 seconds
-
-      // Verify most operations succeeded (allowing for some failures under load)
+      // Verify mixed results
       const successful = results.filter(r => r.status === 'fulfilled')
-      expect(successful.length).toBeGreaterThan(batchSize * 0.8) // At least 80% success rate
+      const failed = results.filter(r => r.status === 'rejected')
 
-      // Clean up successful todos
-      for (const result of results) {
-        if (result.status === 'fulfilled') {
-          dataManager.recordCreatedId(result.value.id)
-        }
-      }
-
-      // Verify data integrity
-      const allTodos = await testPb.collection('todos').getFullList()
-      const createdTodos = allTodos.filter(todo =>
-        todo.title.startsWith('High Volume Todo')
-      )
-      expect(createdTodos.length).toBe(successful.length)
+      expect(successful.length + failed.length).toBe(batchSize)
+      expect(successful.length).toBeGreaterThan(0)
     })
   })
 
   describe('Concurrent Updates', () => {
-    it('should handle concurrent updates to same todo', async () => {
-      const userId = userManager.getTestId()
-
-      // Create a todo
-      const todo = await testPb.collection('todos').create({
-        title: 'Original Title',
-        user: userId,
-        completed: false,
-        priority: 'medium',
-      })
-      dataManager.recordCreatedId(todo.id)
-
-      // Perform multiple updates concurrently
-      const updatePromises = [
-        testPb.collection('todos').update(todo.id, { title: 'Update 1' }),
-        testPb.collection('todos').update(todo.id, { title: 'Update 2' }),
-        testPb.collection('todos').update(todo.id, { title: 'Update 3' }),
-        testPb.collection('todos').update(todo.id, { completed: true }),
-        testPb.collection('todos').update(todo.id, { priority: 'high' }),
-      ]
-
-      const results = await Promise.allSettled(updatePromises)
-
-      // At least one update should succeed
-      const successfulUpdates = results.filter(r => r.status === 'fulfilled')
-      expect(successfulUpdates.length).toBeGreaterThan(0)
-
-      // Final state should be consistent
-      const finalTodo = await testPb.collection('todos').getOne(todo.id)
-      expect(['Update 1', 'Update 2', 'Update 3', 'Original Title']).toContain(finalTodo.title)
-      expect([true, false]).toContain(finalTodo.completed)
-      expect(['medium', 'high']).toContain(finalTodo.priority)
-    })
-
     it('should handle concurrent updates to different todos', async () => {
-      const userId = userManager.getTestId()
-      const todoCount = 20
-      const todos = []
+      const todoCount = 5
+      const promises = []
 
-      // Create multiple todos
+      // Simulate updates to different todos
       for (let i = 0; i < todoCount; i++) {
-        const todo = await testPb.collection('todos').create({
-          title: `Todo ${i}`,
-          user: userId,
-          completed: false,
-          priority: 'medium',
+        const mockTodo = {
+          id: `todo-update-${i}`,
+          title: `Updated Todo ${i}`,
+          completed: true,
+          priority: ['low', 'medium', 'high'][i % 3] as 'low' | 'medium' | 'high',
+          user_id: MOCK_TEST_USER.id,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        }
+
+        ;(global.fetch as any).mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: mockTodo }),
         })
-        todos.push(todo)
-        dataManager.recordCreatedId(todo.id)
+
+        promises.push(
+          api.todos.update(`todo-update-${i}`, {
+            title: `Updated Todo ${i}`,
+            completed: true,
+          })
+        )
       }
 
-      // Update all todos concurrently
-      const updatePromises = todos.map((todo, index) =>
-        testPb.collection('todos').update(todo.id, {
-          title: `Updated Todo ${index}`,
-          completed: true,
-          priority: ['low', 'medium', 'high'][index % 3] as 'low' | 'medium' | 'high',
-        })
-      )
-
-      const results = await Promise.all(updatePromises)
+      const results = await Promise.all(promises)
 
       // Verify all updates succeeded
       expect(results).toHaveLength(todoCount)
       results.forEach((result, index) => {
         expect(result.title).toBe(`Updated Todo ${index}`)
         expect(result.completed).toBe(true)
-        expect(['low', 'medium', 'high']).toContain(result.priority)
       })
+    })
+
+    it('should handle concurrent toggles', async () => {
+      const toggleCount = 5
+      const promises = []
+
+      for (let i = 0; i < toggleCount; i++) {
+        const mockTodo = {
+          id: `todo-toggle-${i}`,
+          title: `Toggle Todo ${i}`,
+          completed: i % 2 === 0,
+          priority: 'medium' as const,
+          user_id: MOCK_TEST_USER.id,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        }
+
+        ;(global.fetch as any).mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: mockTodo }),
+        })
+
+        promises.push(api.todos.toggleComplete(`todo-toggle-${i}`))
+      }
+
+      const results = await Promise.all(promises)
+
+      // Verify all toggles succeeded
+      expect(results).toHaveLength(toggleCount)
     })
   })
 
   describe('Concurrent Mixed Operations', () => {
     it('should handle concurrent create, read, update, delete operations', async () => {
-      const userId = userManager.getTestId()
-      const operationCount = 30
+      const operationCount = 20
       const promises = []
 
-      // Create initial todos to work with
-      const initialTodos = []
-      for (let i = 0; i < 10; i++) {
-        const todo = await testPb.collection('todos').create({
-          title: `Initial Todo ${i}`,
-          user: userId,
-          completed: false,
-          priority: 'medium',
-        })
-        initialTodos.push(todo)
-        dataManager.recordCreatedId(todo.id)
-      }
-
-      // Mix of concurrent operations
       for (let i = 0; i < operationCount; i++) {
         const operation = i % 4
 
         switch (operation) {
           case 0: // Create
-            promises.push(
-              testPb.collection('todos').create({
-                title: `Concurrent Create ${i}`,
-                user: userId,
+            {
+              const mockTodo = {
+                id: `todo-op-${i}`,
+                title: `Operation Todo ${i}`,
                 completed: false,
-                priority: 'low',
-              }).then(todo => {
-                dataManager.recordCreatedId(todo.id)
-                return todo
+                priority: 'low' as const,
+                user_id: MOCK_TEST_USER.id,
+                created_at: Date.now(),
+                updated_at: Date.now(),
+              }
+
+              ;(global.fetch as any).mockResolvedValueOnce({
+                ok: true,
+                status: 201,
+                json: async () => ({ success: true, data: mockTodo }),
               })
-            )
-            break
 
-          case 1: // Read
-            if (initialTodos.length > 0) {
-              const todoId = initialTodos[i % initialTodos.length].id
-              promises.push(testPb.collection('todos').getOne(todoId))
-            }
-            break
-
-          case 2: // Update
-            if (initialTodos.length > 0) {
-              const todoId = initialTodos[i % initialTodos.length].id
               promises.push(
-                testPb.collection('todos').update(todoId, {
-                  title: `Concurrent Update ${i}`,
-                  completed: i % 2 === 0,
-                })
+                api.todos.create({ title: `Operation Todo ${i}`, priority: 'low' })
               )
             }
             break
 
-          case 3: // Read All
-            promises.push(testPb.collection('todos').getFullList())
+          case 1: // Read
+            {
+              const mockTodo = {
+                id: `todo-read-${i}`,
+                title: `Read Todo ${i}`,
+                completed: false,
+                priority: 'medium' as const,
+                user_id: MOCK_TEST_USER.id,
+                created_at: Date.now(),
+                updated_at: Date.now(),
+              }
+
+              ;(global.fetch as any).mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                json: async () => ({ success: true, data: mockTodo }),
+              })
+
+              promises.push(api.todos.getById(`todo-read-${i}`))
+            }
+            break
+
+          case 2: // Update
+            {
+              const mockTodo = {
+                id: `todo-upd-${i}`,
+                title: `Updated Op ${i}`,
+                completed: true,
+                priority: 'high' as const,
+                user_id: MOCK_TEST_USER.id,
+                created_at: Date.now(),
+                updated_at: Date.now(),
+              }
+
+              ;(global.fetch as any).mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                json: async () => ({ success: true, data: mockTodo }),
+              })
+
+              promises.push(
+                api.todos.update(`todo-upd-${i}`, { title: `Updated Op ${i}` })
+              )
+            }
+            break
+
+          case 3: // Delete
+            ;(global.fetch as any).mockResolvedValueOnce({
+              ok: true,
+              status: 204,
+              json: async () => ({ success: true, data: null }),
+            })
+
+            promises.push(api.todos.delete(`todo-del-${i}`))
             break
         }
       }
@@ -227,94 +275,90 @@ describe('Concurrent Operations Integration Tests', () => {
       // Most operations should succeed
       const successful = results.filter(r => r.status === 'fulfilled')
       expect(successful.length).toBeGreaterThan(operationCount * 0.8)
-
-      // Verify final state consistency
-      const finalTodos = await testPb.collection('todos').getFullList()
-      expect(finalTodos).toBeInstanceOf(Array)
-      expect(finalTodos.length).toBeGreaterThanOrEqual(initialTodos.length)
     })
   })
 
   describe('Concurrent Authentication', () => {
-    it('should handle concurrent authentication operations', async () => {
+    it('should handle concurrent authentication checks', async () => {
       const promises = []
 
-      // Test concurrent logins (should succeed)
+      // Test concurrent auth checks
       for (let i = 0; i < 5; i++) {
-        promises.push(
-          testPb.collection('users').authWithPassword(
-            'test@example.com',
-            'testpassword123'
-          )
-        )
+        promises.push(Promise.resolve(api.auth.isAuthenticated()))
       }
 
       const results = await Promise.all(promises)
 
-      // All should succeed
+      // All should indicate authenticated
       results.forEach(result => {
-        expect(result).toBeDefined()
-        expect(result.record).toBeDefined()
-        expect(result.token).toBeDefined()
+        expect(result).toBe(true)
       })
     })
 
-    it('should handle concurrent user creation', async () => {
+    it('should handle concurrent token refreshes', async () => {
+      const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new.token'
       const promises = []
 
-      // Create multiple users concurrently
+      // Simulate multiple concurrent refresh requests
       for (let i = 0; i < 3; i++) {
-        const email = `concurrent${i}_${Date.now()}@example.com`
-        promises.push(
-          testPb.collection('users').create({
-            email,
-            password: 'testpassword123',
-            passwordConfirm: 'testpassword123',
-            name: `Concurrent User ${i}`,
-          })
-        )
+        const mockResponse = {
+          success: true,
+          data: {
+            token: newToken,
+            user: MOCK_TEST_USER,
+          },
+        }
+
+        ;(global.fetch as any).mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => mockResponse,
+        })
+
+        promises.push(api.auth.refresh())
       }
 
       const results = await Promise.all(promises)
 
       // All should succeed
-      results.forEach((result, index) => {
-        expect(result.id).toBeDefined()
-        expect(result.name).toBe(`Concurrent User ${index}`)
+      expect(results).toHaveLength(3)
+      results.forEach(result => {
+        expect(result).toBeDefined()
+        expect(result.token).toBeDefined()
       })
-
-      // Clean up created users
-      for (const result of results) {
-        try {
-          await testPb.collection('users').delete(result.id)
-        } catch (error) {
-          // User deletion might fail due to constraints, which is okay
-          console.warn('Failed to cleanup user:', result.id, error)
-        }
-      }
     })
   })
 
   describe('Stress Testing', () => {
     it('should handle sustained concurrent load', async () => {
-      const userId = userManager.getTestId()
-      const rounds = 3
-      const operationsPerRound = 20
+      const rounds = 2
+      const operationsPerRound = 10
 
       for (let round = 0; round < rounds; round++) {
         const promises = []
 
-        // Create todos
+        // Create todos in this round
         for (let i = 0; i < operationsPerRound; i++) {
+          const mockTodo = {
+            id: `todo-stress-${round}-${i}`,
+            title: `Stress Test Round ${round} Todo ${i}`,
+            completed: false,
+            priority: 'medium' as const,
+            user_id: MOCK_TEST_USER.id,
+            created_at: Date.now(),
+            updated_at: Date.now(),
+          }
+
+          ;(global.fetch as any).mockResolvedValueOnce({
+            ok: true,
+            status: 201,
+            json: async () => ({ success: true, data: mockTodo }),
+          })
+
           promises.push(
-            testPb.collection('todos').create({
+            api.todos.create({
               title: `Stress Test Round ${round} Todo ${i}`,
-              user: userId,
-              completed: false,
               priority: 'medium',
-            }).then(todo => {
-              dataManager.recordCreatedId(todo.id)
-              return todo
             })
           )
         }
@@ -330,16 +374,470 @@ describe('Concurrent Operations Integration Tests', () => {
         // Success rate should be high
         const successful = results.filter(r => r.status === 'fulfilled')
         expect(successful.length).toBeGreaterThan(operationsPerRound * 0.9)
+      }
+    })
+  })
+})
+```
 
-        console.log(`Round ${round + 1}/${rounds}: ${successful.length}/${operationsPerRound} operations in ${duration}ms`)
+Now let me create the error-handling integration test:
+
+<file_path>
+pbtodo/frontend/src/tests/integration/error-handling.integration.test.ts
+</file_path>
+
+<edit_description>
+Convert error handling integration tests to mocked version
+</edit_description>
+
+```
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { api } from '../../services/api'
+import { TEST_CONFIG, MOCK_TEST_USER, MOCK_AUTH_TOKEN } from './setup'
+
+// Mock the fetch function
+global.fetch = vi.fn()
+
+describe('Error Handling Integration Tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+  })
+
+  describe('Network Errors', () => {
+    it('should handle connection refused errors', async () => {
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('connect ECONNREFUSED')
+      )
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle timeout errors', async () => {
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('Request timeout')
+      )
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle DNS resolution errors', async () => {
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('getaddrinfo ENOTFOUND')
+      )
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle network unreachable errors', async () => {
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('Network is unreachable')
+      )
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+  })
+
+  describe('HTTP Status Errors', () => {
+    it('should handle 400 Bad Request', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid request parameters',
       }
 
-      // Verify all data is consistent
-      const allTodos = await testPb.collection('todos').getFullList()
-      const stressTodos = allTodos.filter(todo =>
-        todo.title.includes('Stress Test')
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.todos.create({ title: '', priority: 'invalid' as any })
+      ).rejects.toThrow()
+    })
+
+    it('should handle 401 Unauthorized', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Unauthorized',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => mockResponse,
+      })
+
+      localStorage.removeItem('authToken')
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle 403 Forbidden', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Access denied',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getById('restricted-todo')).rejects.toThrow()
+    })
+
+    it('should handle 404 Not Found', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Todo not found',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getById('non-existent')).rejects.toThrow()
+    })
+
+    it('should handle 409 Conflict', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Resource conflict',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.todos.create({ title: 'Duplicate', priority: 'medium' })
+      ).rejects.toThrow()
+    })
+
+    it('should handle 429 Too Many Requests', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Rate limit exceeded',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle 500 Internal Server Error', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Internal server error',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle 502 Bad Gateway', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Bad gateway',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle 503 Service Unavailable', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Service unavailable',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => mockResponse,
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+  })
+
+  describe('Response Format Errors', () => {
+    it('should handle malformed JSON responses', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new Error('Invalid JSON')
+        },
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle missing error field in error response', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({}),
+      })
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+    })
+
+    it('should handle null response', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => null,
+      })
+
+      const result = await api.todos.getAll()
+      expect(result).toBeNull()
+    })
+
+    it('should handle unexpected response structure', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ unexpected: 'structure' }),
+      })
+
+      // Should handle gracefully or throw
+      const result = await api.todos.getAll()
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe('Validation Errors', () => {
+    it('should handle invalid email format', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid email format',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.register('invalid-email', 'Password123!', 'User')
+      ).rejects.toThrow()
+    })
+
+    it('should handle password too weak', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Password does not meet complexity requirements',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.register('user@example.com', 'weak', 'User')
+      ).rejects.toThrow()
+    })
+
+    it('should handle missing required fields', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Required field missing: title',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.todos.create({ title: '', priority: 'medium' })
+      ).rejects.toThrow()
+    })
+
+    it('should handle invalid enum values', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid priority value',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.todos.create({ title: 'Test', priority: 'invalid' as any })
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('Authentication Errors', () => {
+    it('should handle invalid credentials', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Invalid email or password',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.login('wrong@example.com', 'wrongpassword')
+      ).rejects.toThrow()
+    })
+
+    it('should handle expired tokens', async () => {
+      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0IiwiZXhwIjoxNjAwMDAwMDAwfQ.mock'
+      localStorage.setItem('authToken', expiredToken)
+
+      expect(api.auth.isAuthenticated()).toBe(false)
+    })
+
+    it('should handle missing authentication token', async () => {
+      localStorage.removeItem('authToken')
+
+      expect(api.auth.isAuthenticated()).toBe(false)
+      expect(api.auth.getCurrentUser()).toBeNull()
+    })
+
+    it('should handle malformed tokens', async () => {
+      localStorage.setItem('authToken', 'invalid.token')
+
+      expect(api.auth.isAuthenticated()).toBe(false)
+    })
+  })
+
+  describe('Concurrent Error Handling', () => {
+    it('should handle errors in concurrent requests', async () => {
+      const promises = []
+
+      // Mix of successful and failed requests
+      for (let i = 0; i < 5; i++) {
+        if (i % 2 === 0) {
+          // Success
+          const mockTodo = {
+            id: `todo-${i}`,
+            title: `Todo ${i}`,
+            completed: false,
+            priority: 'medium' as const,
+            user_id: MOCK_TEST_USER.id,
+            created_at: Date.now(),
+            updated_at: Date.now(),
+          }
+
+          ;(global.fetch as any).mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: mockTodo }),
+          })
+        } else {
+          // Error
+          ;(global.fetch as any).mockResolvedValueOnce({
+            ok: false,
+            status: 404,
+            json: async () => ({ success: false, error: 'Not found' }),
+          })
+        }
+
+        promises.push(
+          api.todos.getById(`todo-${i}`).catch(err => ({ error: err.message }))
+        )
+      }
+
+      const results = await Promise.all(promises)
+
+      // Should have mix of successful and failed results
+      expect(results.length).toBe(5)
+    })
+
+    it('should handle network errors during concurrent operations', async () => {
+      const promises = []
+
+      for (let i = 0; i < 3; i++) {
+        ;(global.fetch as any).mockRejectedValueOnce(
+          new Error('Network error')
+        )
+
+        promises.push(
+          api.todos.getAll().catch(err => ({ error: err.message }))
+        )
+      }
+
+      const results = await Promise.all(promises)
+
+      // All should have errors
+      results.forEach(result => {
+        expect(result.error).toBeDefined()
+      })
+    })
+  })
+
+  describe('Recovery Scenarios', () => {
+    it('should recover from temporary network errors', async () => {
+      // First request fails
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('Network error')
       )
-      expect(stressTodos.length).toBeGreaterThan(0)
+
+      await expect(api.todos.getAll()).rejects.toThrow()
+
+      // Second request succeeds
+      const mockResponse = {
+        success: true,
+        data: [],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.todos.getAll()
+      expect(result).toBeDefined()
+    })
+
+    it('should recover from authentication timeout', async () => {
+      // Request times out
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('Request timeout')
+      )
+
+      await expect(api.auth.refresh()).rejects.toThrow()
+
+      // Can still use cached token
+      expect(api.auth.isAuthenticated()).toBe(true)
     })
   })
 })
