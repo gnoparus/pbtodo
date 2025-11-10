@@ -22,6 +22,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Detect system theme preference
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     setSystemTheme(mediaQuery.matches ? 'dark' : 'light')
 
@@ -35,20 +38,30 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
-    setMounted(true)
-    const storedTheme = localStorage.getItem('theme') as Theme | null
+    // Only run on client side
+    if (typeof window === 'undefined') return
 
-    if (storedTheme) {
-      setThemeState(storedTheme)
-    } else {
-      // Use system preference as default
+    setMounted(true)
+
+    try {
+      const storedTheme = localStorage.getItem('theme') as Theme | null
+
+      if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark')) {
+        setThemeState(storedTheme)
+      } else {
+        // Use system preference as default
+        setThemeState(systemTheme)
+      }
+    } catch (error) {
+      // Fallback to system theme if localStorage fails
+      console.warn('Failed to read theme from localStorage:', error)
       setThemeState(systemTheme)
     }
   }, [systemTheme])
 
   // Apply theme to document and save to localStorage
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || typeof window === 'undefined') return
 
     const root = document.documentElement
     if (theme === 'dark') {
@@ -57,7 +70,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.classList.remove('dark')
     }
 
-    localStorage.setItem('theme', theme)
+    try {
+      localStorage.setItem('theme', theme)
+    } catch (error) {
+      console.warn('Failed to save theme to localStorage:', error)
+    }
   }, [theme, mounted])
 
   const toggleTheme = () => {
@@ -65,7 +82,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme)
+    if (newTheme === 'light' || newTheme === 'dark') {
+      setThemeState(newTheme)
+    }
   }
 
   // Prevent flash of incorrect theme on initial load
@@ -94,124 +113,3 @@ export const useTheme = (): ThemeContextType => {
   }
   return context
 }
-```
-
-## Step 4: Create Theme Toggle Component
-
-Now let me create the theme toggle component:
-```typescript
-import React from 'react'
-import { useTheme } from '../contexts/ThemeContext'
-
-const ThemeToggle: React.FC = () => {
-  const { theme, toggleTheme } = useTheme()
-
-  return (
-    <button
-      onClick={toggleTheme}
-      className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-900 transition-colors duration-200"
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-    >
-      {theme === 'light' ? (
-        // Moon icon for dark mode
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
-        </svg>
-      ) : (
-        // Sun icon for light mode
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      )}
-    </button>
-  )
-}
-
-export default ThemeToggle
-```
-
-## Step 5: Update App.tsx to Include ThemeProvider
-
-```typescript
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
-import { TodoProvider } from './contexts/TodoContext'
-import { ThemeProvider } from './contexts/ThemeContext'
-import LoginPage from './components/LoginPage'
-import RegisterPage from './components/RegisterPage'
-import TodoPage from './components/TodoPage'
-import Layout from './components/Layout'
-import ProtectedRoute from './components/ProtectedRoute'
-
-// Export contexts for tests
-export { AuthContext } from './contexts/AuthContext'
-export { TodoContext } from './contexts/TodoContext'
-export { ThemeContext } from './contexts/ThemeContext'
-
-function App() {
-  return (
-    <ThemeProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AuthProvider>
-          <TodoProvider>
-            <Layout>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route
-                  path="/todos"
-                  element={
-                    <ProtectedRoute>
-                      <TodoPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/" element={<Navigate to="/todos" replace />} />
-              </Routes>
-            </Layout>
-          </TodoProvider>
-        </AuthProvider>
-      </Router>
-    </ThemeProvider>
-  )
-}
-
-export default App
-```
-
-Let me commit these changes first before continuing with the component updates:
-```bash
-git add .
-git commit -m "feat: implement theme infrastructure
-
-- Configure Tailwind for dark mode with custom color palette
-- Add CSS custom properties for smooth theme transitions
-- Create ThemeContext for theme state management
-- Add ThemeToggle component with accessible sun/moon icons
-- Update App.tsx to include ThemeProvider
-- Add theme-aware utility classes and component styles
-
-Next: Update existing components to use theme-aware classes"
