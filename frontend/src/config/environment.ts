@@ -202,22 +202,8 @@ export function getSecurityHeaders(): Record<string, string> {
     headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
   }
 
-  // Content Security Policy
-  if (config.cspEnabled) {
-    const cspDirectives = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https:",
-      "font-src 'self'",
-      "connect-src 'self' https://pbtodo-api.bua.workers.dev https://pbtodo-api-staging.bua.workers.dev",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join('; ')
-
-    headers['Content-Security-Policy'] = cspDirectives
-  }
+  // Content Security Policy - handled dynamically by securityHeaders.ts
+  // This avoids hardcoding API URLs and allows environment-specific configuration
 
   // HSTS (only in HTTPS mode)
   if (config.hstsEnabled && config.httpsEnabled) {
