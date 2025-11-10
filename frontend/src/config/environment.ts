@@ -168,7 +168,7 @@ export function validateConfig(): void {
   // Log configuration in development mode only
   if (config.devMode) {
     console.log('🔧 Environment Configuration:', {
-      pocketbaseUrl: config.pocketbaseUrl,
+      apiBaseUrl: config.apiBaseUrl,
       httpsEnabled: config.httpsEnabled,
       minPasswordLength: config.minPasswordLength,
       requirePasswordComplexity: config.requirePasswordComplexity,

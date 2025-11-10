@@ -76,22 +76,24 @@ function buildCSP(config: SecurityHeaderConfig): string {
   const connectSrc = ["connect-src 'self'"]
 
   // Add API URLs based on environment
-  const apiBaseUrl = import.meta.env.VITE_API_URL || config.apiBaseUrl
-  const apiHost = new URL(apiBaseUrl).origin
-  connectSrc.push(apiHost)
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8787'
+  try {
+    const apiHost = new URL(apiBaseUrl).origin
+    connectSrc.push(apiHost)
 
-  // Add additional hosts based on environment
-  if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-    connectSrc.push('http://localhost:8787', 'ws://localhost:8787')
-  }
+    // Add additional hosts based on environment
+    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      connectSrc.push('http://localhost:8787', 'ws://localhost:8787')
+    }
   } catch (error) {
     console.error('Invalid API URL provided:', apiBaseUrl)
     // Optionally skip adding to CSP
   }
 
-  if (config.cspReportUri) {
-    connectSrc.push(config.cspReportUri)
-  }
+  // Note: cspReportUri not available in current config, skipping
+  // if (config.cspReportUri) {
+  //   connectSrc.push(config.cspReportUri)
+  // }
   directives.push(connectSrc.join(' '))
 
   // Media sources
@@ -107,7 +109,7 @@ function buildCSP(config: SecurityHeaderConfig): string {
   directives.push("frame-src 'none'")
 
   // Add script-src for nonces in production
-  if (!config.devMode && config.cspEnabled) {
+  if (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_CSP !== 'false') {
     directives.push("script-src 'self' 'nonce-${generateCSPNonce()}' 'unsafe-inline'")
   }
 

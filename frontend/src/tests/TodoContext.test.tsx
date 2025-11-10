@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TodoProvider, useTodos } from '../contexts/TodoContext'
-import { api, Todo } from '../services/pocketbase'
+import { api, type Todo } from '../services/api'
 
 // Mock the API service
-vi.mock('../services/pocketbase', () => ({
+vi.mock('../services/api', () => ({
   api: {
     todos: {
       getAll: vi.fn(),
@@ -62,9 +62,9 @@ const mockTodo: Todo = {
   description: 'Test Description',
   completed: false,
   priority: 'medium',
-  user: 'user-1',
-  created: '2023-01-01T00:00:00Z',
-  updated: '2023-01-01T00:00:00Z',
+  user_id: 'user-1',
+  created_at: Math.floor(Date.now() / 1000),
+  updated_at: Math.floor(Date.now() / 1000),
 }
 
 describe('TodoContext', () => {

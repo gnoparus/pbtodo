@@ -1,102 +1,193 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import PocketBase from 'pocketbase'
-import { TEST_CONFIG } from './setup'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { api } from '../../services/api'
+import { TEST_CONFIG, MOCK_TEST_USER, MOCK_AUTH_TOKEN } from './setup'
+
+// Mock the fetch function
+global.fetch = vi.fn()
 
 describe('Authentication Integration Tests', () => {
-  let pb: PocketBase
-
   beforeEach(() => {
-    pb = new PocketBase(TEST_CONFIG.pocketbaseUrl)
-    pb.autoCancellation(false)
+    vi.clearAllMocks()
+    localStorage.clear()
+    localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+    api.reloadToken()
   })
 
   describe('User Registration', () => {
     it('should register a new user successfully', async () => {
-      const randomEmail = `test_${Date.now()}@example.com`
-      const password = 'testpassword123'
-      const name = 'Test User'
+      const mockResponse = {
+        success: true,
+        data: {
+          token: MOCK_AUTH_TOKEN,
+          user: MOCK_TEST_USER,
+        },
+      }
 
-      const result = await pb.collection('users').create({
-        email: randomEmail,
-        password,
-        passwordConfirm: password,
-        name,
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
       })
 
+      const result = await api.auth.register(
+        'newuser@example.com',
+        'Password123!',
+        'New User'
+      )
+
       expect(result).toBeDefined()
-      expect(result.id).toBeDefined()
-      // Email may not be visible due to emailVisibility setting
-      expect(result.name).toBe(name)
+      expect(result.user).toBeDefined()
+      expect(result.token).toBeDefined()
     })
 
     it('should reject registration with invalid email', async () => {
-      const promise = pb.collection('users').create({
-        email: 'invalid-email',
-        password: 'testpassword123',
-        passwordConfirm: 'testpassword123',
-        name: 'Test User',
+      const mockResponse = {
+        success: false,
+        error: 'Invalid email format',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
       })
 
-      await expect(promise).rejects.toThrow()
+      await expect(
+        api.auth.register('invalid-email', 'Password123!', 'User')
+      ).rejects.toThrow()
     })
 
-    it('should reject registration with mismatched passwords', async () => {
-      const randomEmail = `test_${Date.now()}@example.com`
+    it('should validate password requirements', async () => {
+      const mockResponse = {
+        success: false,
+        error: 'Password does not meet complexity requirements',
+      }
 
-      const promise = pb.collection('users').create({
-        email: randomEmail,
-        password: 'testpassword123',
-        passwordConfirm: 'differentpassword',
-        name: 'Test User',
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockResponse,
       })
 
-      await expect(promise).rejects.toThrow()
+      await expect(
+        api.auth.register('user@example.com', 'weak', 'User')
+      ).rejects.toThrow()
     })
   })
 
   describe('User Login', () => {
     it('should login with valid credentials', async () => {
-      const result = await pb.collection('users').authWithPassword(
+      const mockResponse = {
+        success: true,
+        data: {
+          token: MOCK_AUTH_TOKEN,
+          user: MOCK_TEST_USER,
+        },
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.auth.login(
         TEST_CONFIG.testUserEmail,
         TEST_CONFIG.testUserPassword
       )
 
       expect(result).toBeDefined()
-      expect(result.record).toBeDefined()
+      expect(result.user).toBeDefined()
       expect(result.token).toBeDefined()
-      expect(pb.authStore.isValid).toBe(true)
-      expect(pb.authStore.model?.email).toBe(TEST_CONFIG.testUserEmail)
+      expect(localStorage.getItem('authToken')).toBe(MOCK_AUTH_TOKEN)
     })
 
     it('should reject login with invalid credentials', async () => {
-      // Clear any existing auth before testing invalid login
-      pb.authStore.clear()
+      const mockResponse = {
+        success: false,
+        error: 'Invalid email or password',
+      }
 
-      const promise = pb.collection('users').authWithPassword(
-        'invalid@example.com',
-        'wrongpassword'
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => mockResponse,
+      })
+
+      await expect(
+        api.auth.login('invalid@example.com', 'wrongpassword')
+      ).rejects.toThrow()
+
+      expect(localStorage.getItem('authToken')).toBeNull()
+    })
+
+    it('should handle network errors gracefully', async () => {
+      ;(global.fetch as any).mockRejectedValueOnce(
+        new Error('Network request failed')
       )
 
-      await expect(promise).rejects.toThrow()
-      expect(pb.authStore.isValid).toBe(false)
+      await expect(
+        api.auth.login(TEST_CONFIG.testUserEmail, TEST_CONFIG.testUserPassword)
+      ).rejects.toThrow()
     })
   })
 
   describe('Authentication State', () => {
     it('should maintain authentication state', async () => {
-      // Login
-      await pb.collection('users').authWithPassword(
-        TEST_CONFIG.testUserEmail,
-        TEST_CONFIG.testUserPassword
-      )
+      const token = MOCK_AUTH_TOKEN
+      localStorage.setItem('authToken', token)
 
-      expect(pb.authStore.isValid).toBe(true)
+      expect(api.auth.isAuthenticated()).toBe(true)
 
-      // Logout
-      pb.authStore.clear()
-      expect(pb.authStore.isValid).toBe(false)
-      expect(pb.authStore.token).toBe('')
-      expect(pb.authStore.model).toBeNull()
+      api.auth.logout()
+
+      expect(localStorage.getItem('authToken')).toBeNull()
+      expect(api.auth.isAuthenticated()).toBe(false)
+    })
+
+    it('should detect expired tokens', async () => {
+      // Create an expired token
+      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0IiwiZXhwIjoxNjAwMDAwMDAwfQ.mock'
+      localStorage.setItem('authToken', expiredToken)
+
+      expect(api.auth.isAuthenticated()).toBe(false)
+      expect(localStorage.getItem('authToken')).toBeNull()
+    })
+
+    it('should decode current user from token', async () => {
+      localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+
+      const user = api.auth.getCurrentUser()
+
+      expect(user).toBeDefined()
+      expect(user?.id).toBeDefined()
+    })
+  })
+
+  describe('Token Refresh', () => {
+    it('should refresh authentication token', async () => {
+      const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new.token'
+      const mockResponse = {
+        success: true,
+        data: {
+          token: newToken,
+          user: MOCK_TEST_USER,
+        },
+      }
+
+      localStorage.setItem('authToken', MOCK_AUTH_TOKEN)
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      })
+
+      const result = await api.auth.refresh()
+
+      expect(result).toBeDefined()
+      expect(result.token).toBe(newToken)
+      expect(localStorage.getItem('authToken')).toBe(newToken)
     })
   })
 })
