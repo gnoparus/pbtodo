@@ -7,7 +7,7 @@ This document provides a complete overview of all deployed environments for the 
 | Environment | Status | Purpose | Branch | Auto-Deploy | URL |
 |-------------|--------|---------|--------|-------------|--------|------|
 | **Development** | ✅ Active | Local development & testing | feature/* | No | `http://localhost:5173` |
-| **Staging** | ✅ Active | Pre-production testing | develop | Yes | `https://staging.pbtodo-frontend.pages.dev` |
+| **Staging** | ✅ Active | Pre-production testing | develop | Yes | `https://develop.pbtodo-frontend.pages.dev` |
 | **Production** | ✅ Active | Live application | main | Yes | `https://pbtodo-frontend.pages.dev` |
 
 ## 🌿 Branch Strategy

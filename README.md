@@ -157,7 +157,7 @@ docker build -t pbtodo:latest -f docker/frontend/Dockerfile .
 ### Staging
 - **Purpose**: Integration testing and validation
 - **Features**: Production-like configuration, automated testing
-- **URL**: https://staging.pbtodo.com
+- **URL**: https://develop.pbtodo-frontend.pages.dev
 
 ### Production
 - **Purpose**: Live production deployment

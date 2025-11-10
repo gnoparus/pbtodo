@@ -53,12 +53,7 @@ https://pbtodo-api-staging.bua.workers.dev
 - Todos: `https://pbtodo-api-staging.bua.workers.dev/api/todos`
 
 ### Frontend
-- URL: `https://staging.pbtodo-frontend.pages.dev`
-```
 
-**Alternative staging URLs** (Cloudflare Pages preview):
-- Branch deployments: `https://develop.pbtodo-frontend.pages.dev`
-- Custom subdomain: `https://staging.pbtodo-frontend.pages.dev` (if configured)
 
 **Purpose:** Pre-production testing and QA
 

@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual staging deployment'
+        description: "Reason for manual staging deployment"
         required: false
-        default: 'Manual staging deployment'
+        default: "Manual staging deployment"
 
 env:
   NODE_VERSION: "20"
