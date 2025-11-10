@@ -6,43 +6,98 @@
   html {
     font-family: system-ui, sans-serif;
   }
+
+  /* CSS custom properties for theme colors */
+  :root {
+    --color-bg-primary: 255 255 255;
+    --color-bg-secondary: 249 250 251;
+    --color-bg-tertiary: 243 244 246;
+    --color-text-primary: 17 24 39;
+    --color-text-secondary: 75 85 99;
+    --color-text-tertiary: 107 114 128;
+    --color-border-primary: 229 231 235;
+    --color-border-secondary: 209 213 219;
+    --color-success: 34 197 94;
+    --color-danger: 239 68 68;
+    --color-warning: 245 158 11;
+  }
+
+  .dark {
+    --color-bg-primary: 17 24 39;
+    --color-bg-secondary: 31 41 55;
+    --color-bg-tertiary: 55 65 81;
+    --color-text-primary: 243 244 246;
+    --color-text-secondary: 156 163 175;
+    --color-text-tertiary: 107 114 128;
+    --color-border-primary: 75 85 99;
+    --color-border-secondary: 55 65 81;
+    --color-success: 74 222 128;
+    --color-danger: 248 113 113;
+    --color-warning: 251 191 36;
+  }
+
+  /* Smooth theme transitions */
+  * {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 dark:bg-primary-500 dark:hover:bg-primary-600 dark:focus:ring-primary-400;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+    @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:focus:ring-gray-400;
   }
 
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500 dark:bg-danger-500 dark:hover:bg-danger-600 dark:focus:ring-danger-400;
   }
 
   .input {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
+    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:focus:ring-offset-gray-900;
   }
 
   .card {
-    @apply bg-white p-6 rounded-lg shadow-md border border-gray-200;
+    @apply bg-white p-6 rounded-lg shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700;
   }
 
   /* Checkbox UX improvements - distinguish selection vs completion */
   .checkbox-selection {
-    @apply h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm;
+    @apply h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-primary-600 dark:focus:ring-primary-400;
   }
 
   .checkbox-completion {
-    @apply h-5 w-5 text-green-600 focus:ring-green-500 border-green-300 rounded-full;
+    @apply h-5 w-5 text-success-600 focus:ring-success-500 border-success-300 rounded-full dark:border-success-600 dark:bg-gray-800;
   }
 
   .checkbox-completion:checked {
-    @apply bg-green-600 border-green-600;
+    @apply bg-success-600 border-success-600 dark:bg-success-500 dark:border-success-500;
+  }
+
+  /* New theme-aware utility classes */
+  .bg-primary {
+    background-color: rgb(var(--color-bg-primary));
+  }
+
+  .bg-secondary {
+    background-color: rgb(var(--color-bg-secondary));
+  }
+
+  .text-primary {
+    color: rgb(var(--color-text-primary));
+  }
+
+  .text-secondary {
+    color: rgb(var(--color-text-secondary));
+  }
+
+  .border-primary {
+    border-color: rgb(var(--color-border-primary));
   }
 }
