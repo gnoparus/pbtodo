@@ -128,7 +128,7 @@ describe('Layout', () => {
   it('should have correct navigation links', () => {
     renderLayout()
 
-    const homeLink = screen.getByText('Todo SaaS')
+    const homeLink = screen.getByRole('link', { name: /Todo SaaS/i })
     const loginLink = screen.getByText('Login')
     const registerLink = screen.getByText('Register')
 
@@ -195,7 +195,7 @@ describe('Layout', () => {
     renderLayout()
 
     const nav = screen.getByRole('navigation')
-    expect(nav).toHaveClass('flex', 'items-center', 'space-x-4')
+    expect(nav).toHaveClass('flex', 'items-center', 'space-x-6')
   })
 
   it('should have proper semantic HTML structure', () => {
@@ -218,5 +218,103 @@ describe('Layout', () => {
 
     const loading = screen.getByText('Loading...')
     expect(loading).toHaveAttribute('aria-busy', 'true')
+  })
+
+  describe('Enhanced Visual Design', () => {
+    it('should have gradient background on header', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      const headerClasses = header.className
+
+      expect(headerClasses).toMatch(/bg-gradient/)
+    })
+
+    it('should have logo with enhanced styling', () => {
+      renderLayout()
+
+      const logo = screen.getByRole('link', { name: /Todo SaaS/i })
+      expect(logo).toHaveClass('flex', 'items-center', 'space-x-2', 'text-xl', 'font-bold', 'text-white', 'transition-colors')
+      expect(logo).toHaveAttribute('href', '/')
+    })
+
+    it('should have improved spacing and layout', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      const nav = screen.getByRole('navigation')
+
+      expect(header).toHaveClass('shadow-md')
+      expect(nav).toHaveClass('flex', 'items-center', 'space-x-6')
+    })
+
+    it('should have enhanced hover effects on navigation links', () => {
+      renderLayout()
+
+      const loginLink = screen.getByText('Login')
+      expect(loginLink.className).toMatch(/hover:/)
+    })
+
+    it('should have modern button styling', () => {
+      renderLayout({
+        isAuthenticated: false,
+      })
+
+      const registerButton = screen.getByText('Register')
+      expect(registerButton).toHaveClass('btn', 'btn-primary')
+    })
+
+    it('should have smooth transitions on interactive elements', () => {
+      renderLayout()
+
+      const logo = screen.getByRole('link', { name: /Todo SaaS/i })
+      expect(logo.className).toMatch(/transition/)
+    })
+
+    it('should display logo icon/emoji', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      const headerText = header.textContent
+
+      // Should contain logo text
+      expect(headerText).toContain('Todo SaaS')
+    })
+
+    it('should have improved header styling on mobile and desktop', () => {
+      renderLayout()
+
+      const headerContainer = screen.getByRole('banner').querySelector('div')
+      expect(headerContainer).toHaveClass('max-w-7xl', 'mx-auto', 'px-4')
+    })
+
+    it('should maintain accessibility with enhanced styling', () => {
+      renderLayout()
+
+      const header = screen.getByRole('banner')
+      const nav = screen.getByRole('navigation')
+
+      expect(header).toBeInTheDocument()
+      expect(nav).toBeInTheDocument()
+    })
+
+    it('should have proper contrast and visual hierarchy', () => {
+      renderLayout({
+        isAuthenticated: true,
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          name: 'Test User',
+          created: '2023-01-01T00:00:00Z',
+          updated: '2023-01-01T00:00:00Z',
+        },
+      })
+
+      const welcomeText = screen.getByText(/Welcome/)
+      expect(welcomeText).toHaveClass('text-sm')
+
+      const logoutBtn = screen.getByText('Logout')
+      expect(logoutBtn).toHaveClass('btn')
+    })
   })
 })

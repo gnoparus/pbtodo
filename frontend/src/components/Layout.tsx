@@ -6,6 +6,10 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
+/**
+ * Main Layout component providing header, navigation, and footer
+ * Features enhanced visual design with gradient background and modern styling
+ */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, isAuthenticated, loading, error, logout, clearError } = useAuth()
   const location = useLocation()
@@ -24,34 +28,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200" role="banner">
+      {/* Enhanced Header with Gradient Background */}
+      <header
+        className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-md border-b border-blue-800"
+        role="banner"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-              Todo SaaS
+            {/* Logo with Icon */}
+            <Link
+              to="/"
+              className="flex items-center space-x-2 text-xl font-bold text-white hover:text-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-700 focus:ring-white rounded-lg px-2 py-1"
+            >
+              <span className="text-2xl">🚀</span>
+              <span>Todo SaaS</span>
             </Link>
 
             {/* Navigation */}
-            <nav className="flex items-center space-x-4" role="navigation">
+            <nav className="flex items-center space-x-6" role="navigation">
               {isAuthenticated ? (
                 <>
                   <Link
                     to="/todos"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       location.pathname === '/todos'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-blue-50 hover:bg-blue-500 hover:text-white'
                     }`}
                   >
                     My Todos
                   </Link>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                  <div className="flex items-center space-x-3 pl-3 border-l border-blue-500">
+                    <span className="text-sm font-medium text-blue-50">Welcome, {user?.name}</span>
                     <button
                       onClick={logout}
-                      className="btn btn-secondary text-sm"
+                      className="btn btn-secondary text-sm hover:shadow-lg transition-shadow duration-200"
                       aria-label="Logout from your account"
                     >
                       Logout
@@ -62,17 +73,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <>
                   <Link
                     to="/login"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       location.pathname === '/login'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-blue-50 hover:bg-blue-500 hover:text-white'
                     }`}
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className="btn btn-primary text-sm"
+                    className="btn btn-primary text-sm shadow-md hover:shadow-lg transition-shadow duration-200"
                   >
                     Register
                   </Link>
