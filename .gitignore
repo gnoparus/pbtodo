@@ -147,6 +147,12 @@ pocketbase/pb_hooks/
 pocketbase/*.db
 pocketbase/*.log
 
+# Wrangler (Cloudflare Workers)
+.wrangler/
+workers/.wrangler/
+*/.wrangler/
+**/.wrangler/
+
 # Docker
 .dockerignore
 docker-compose.override.yml
