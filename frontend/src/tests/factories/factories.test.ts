@@ -281,8 +281,8 @@ describe('Todo Factory', () => {
     it('should create todo with emoji', () => {
       const todo = createTestTodoWithEmoji()
 
-      expect(todo.title).toMatch(/[🎉🚀]/)
-      expect(todo.description).toMatch(/[✨💪]/)
+      expect(todo.title).toMatch(/[🎉🚀]/u)
+      expect(todo.description).toMatch(/[✨💪]/u)
     })
   })
 
