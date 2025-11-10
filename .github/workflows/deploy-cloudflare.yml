@@ -13,6 +13,13 @@ on:
 env:
   NODE_VERSION: "20"
 
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
 jobs:
   # Job 1: Test and Build
   test-and-build:
@@ -122,19 +129,16 @@ jobs:
           name: frontend-build
           path: frontend/dist/
 
-      - name: 📦 Install Wrangler
-        run: npm install -g wrangler
-
-      - name: 🚀 Deploy to Cloudflare Pages
-        run: |
-          cd workers
-          npx wrangler pages deploy ../frontend/dist \
-            --project-name=pbtodo-frontend \
-            --branch=main \
-            --commit-dirty=true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: 🚀 Deploy to Cloudflare Pages (Production)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: pbtodo-frontend
+          directory: frontend/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          wranglerVersion: "3"
 
       - name: ✅ Pages Deployment Complete
         run: |
